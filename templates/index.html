@@ -1,0 +1,145 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOGX Salon - Online Booking</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <div class="logo">VOGX Salon</div>
+        <nav id="mainNav">
+            <a href="/">Home</a>
+            <a href="/services">Services</a>
+            <a href="/bookings" id="bookingsLink" style="display:none;">My Bookings</a>
+        </nav>
+        <div class="auth-links">
+            <button id="loginBtn" class="btn btn-secondary btn-sm" onclick="window.location.href='/login'">Login</button>
+            <div id="userMenu" style="display:none; display:flex; gap:1rem; align-items:center;">
+                <span id="userName"></span>
+                <button id="logoutBtn" class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- Hero Section -->
+    <section style="background-color:#f9f9f9; padding:4rem 0;">
+        <div class="container text-center">
+            <h1 style="font-size:2.5rem; margin-bottom:1rem;">Welcome to VOGX Salon</h1>
+            <p style="font-size:1.1rem; color:#7f8c8d; margin-bottom:2rem;">Professional salon services at your fingertips. Book your appointment today!</p>
+            <a href="/services" class="btn btn-primary btn-lg">Browse Services</a>
+        </div>
+    </section>
+
+    <!-- Services Preview -->
+    <section>
+        <div class="container">
+            <div class="section-title">
+                <h2>Our Services</h2>
+                <p>Premium salon services tailored for you</p>
+            </div>
+            <div id="servicesPreview" class="grid grid-3">
+                <!-- Services will be loaded here -->
+            </div>
+            <div class="text-center mt-4">
+                <a href="/services" class="btn btn-primary">View All Services</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section style="background-color:#f9f9f9;">
+        <div class="container">
+            <div class="grid grid-3">
+                <div class="text-center">
+                    <h3 style="color:#2c3e50;">Easy Booking</h3>
+                    <p>Simple and quick booking process with just a few clicks</p>
+                </div>
+                <div class="text-center">
+                    <h3 style="color:#2c3e50;">Expert Stylists</h3>
+                    <p>Experienced professionals dedicated to your satisfaction</p>
+                </div>
+                <div class="text-center">
+                    <h3 style="color:#2c3e50;">Secure Payment</h3>
+                    <p>Safe and secure payment options for your peace of mind</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="container">
+        <p>&copy; 2026 VOGX Salon. All rights reserved.</p>
+        <p>Phone: +91 XXXXXXXXXX | Email: info@vogxsalon.com</p>
+    </div>
+</footer>
+
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    // Check authentication on page load
+    async function checkAuth() {
+        if (api.token) {
+            try {
+                const profile = await api.getProfile();
+                document.getElementById('loginBtn').style.display = 'none';
+                const userMenu = document.getElementById('userMenu');
+                userMenu.style.display = 'flex';
+                document.getElementById('userName').textContent = `Hi, ${profile.name}`;
+                document.getElementById('bookingsLink').style.display = 'block';
+            } catch (error) {
+                api.clearToken();
+            }
+        }
+    }
+
+    // Load services preview
+    async function loadServicesPreview() {
+        try {
+            const response = await api.getServices(1);
+            const services = response.results.slice(0, 3);
+            const previewDiv = document.getElementById('servicesPreview');
+            
+            previewDiv.innerHTML = services.map(service => `
+                <div class="card">
+                    <div class="card-body">
+                        <h3>${service.name}</h3>
+                        <p class="text-muted">${service.category_name}</p>
+                        <p>${service.description}</p>
+                        <div style="margin-top:1rem;">
+                            <p><strong>Price:</strong> ${formatPrice(service.price)}</p>
+                            <p class="text-muted"><strong>Duration:</strong> ${service.duration_minutes} mins</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading services:', error);
+        }
+    }
+
+    async function logout() {
+        try {
+            await api.logout();
+            api.clearToken();
+            window.location.reload();
+        } catch (error) {
+            showAlert('Logout failed', 'error');
+        }
+    }
+
+    // Initialize
+    window.addEventListener('load', () => {
+        checkAuth();
+        loadServicesPreview();
+    });
+</script>
+
+</body>
+</html>

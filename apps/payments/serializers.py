@@ -1,9 +1,33 @@
 import uuid
+import hashlib
+import hmac
 
 from rest_framework import serializers
+from django.utils import timezone
 
 from apps.bookings.models import Booking
 from .models import Payment
+
+
+class CreateOrderSerializer(serializers.Serializer):
+    """Serializer to create Razorpay order for a booking"""
+    booking_id = serializers.IntegerField()
+    
+    def validate_booking_id(self, value):
+        try:
+            booking = Booking.objects.get(id=value)
+            if booking.status not in ['pending', 'confirmed']:
+                raise serializers.ValidationError("Booking must be in pending or confirmed status")
+        except Booking.DoesNotExist:
+            raise serializers.ValidationError("Booking not found")
+        return value
+
+
+class VerifyPaymentSerializer(serializers.Serializer):
+    """Serializer to verify Razorpay payment"""
+    razorpay_order_id = serializers.CharField(max_length=100)
+    razorpay_payment_id = serializers.CharField(max_length=100)
+    razorpay_signature = serializers.CharField(max_length=255)
 
 
 class PaymentSerializer(serializers.ModelSerializer):

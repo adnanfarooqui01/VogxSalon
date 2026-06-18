@@ -9,8 +9,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from frontend_views import index, login, services, bookings, profile
 
 urlpatterns = [
+    # Frontend routes
+    path('', index, name='home'),
+    path('login', login, name='login'),
+    path('services', services, name='services'),
+    path('bookings', bookings, name='bookings'),
+    path('profile', profile, name='profile'),
+    
+    # Admin
     path('admin/', admin.site.urls),
     path('api/', include('apps.core.urls', namespace='core')),
     path('api/auth/', include('apps.accounts.urls', namespace='accounts')),

@@ -1,0 +1,215 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - VOGX Salon</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <div class="logo">VOGX Salon</div>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/services">Services</a>
+            <a href="/bookings">My Bookings</a>
+        </nav>
+        <div class="auth-links">
+            <div id="userMenu" style="display:flex; gap:1rem; align-items:center;">
+                <span id="userName"></span>
+                <button id="logoutBtn" class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- Page Header -->
+    <section style="background-color:#f9f9f9; padding:2rem 0;">
+        <div class="container">
+            <h1>My Profile</h1>
+            <p class="text-muted">Update your personal information</p>
+        </div>
+    </section>
+
+    <!-- Profile Section -->
+    <section>
+        <div class="container">
+            <div style="max-width:500px;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Personal Information</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="alerts"></div>
+
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" disabled>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="name">Full Name</label>
+                            <input type="text" id="name" placeholder="Enter your full name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" placeholder="Enter your email address">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="joinDate">Member Since</label>
+                            <input type="text" id="joinDate" disabled>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary" onclick="updateProfile()">Save Changes</button>
+                        <button class="btn btn-secondary" onclick="resetForm()" style="margin-left:1rem;">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payment History Section -->
+    <section style="background-color:#f9f9f9;">
+        <div class="container">
+            <h2>Payment History</h2>
+            <div id="paymentsList" class="mt-3"></div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="container">
+        <p>&copy; 2026 VOGX Salon. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    let currentProfile = null;
+
+    function addAlert(message, type = 'success') {
+        const alertsDiv = document.getElementById('alerts');
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+        alertsDiv.innerHTML = '';
+        alertsDiv.appendChild(alertDiv);
+    }
+
+    // Check authentication and load profile
+    async function loadProfile() {
+        if (!api.token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            const profile = await api.getProfile();
+            currentProfile = profile;
+            
+            document.getElementById('userName').textContent = `Hi, ${profile.name}`;
+            document.getElementById('phone').value = profile.phone;
+            document.getElementById('name').value = profile.name || '';
+            document.getElementById('email').value = profile.email || '';
+            document.getElementById('joinDate').value = formatDate(profile.date_joined);
+        } catch (error) {
+            api.clearToken();
+            window.location.href = '/login';
+        }
+    }
+
+    async function updateProfile() {
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+
+        if (!name) {
+            addAlert('Please enter your name', 'error');
+            return;
+        }
+
+        if (email && !email.includes('@')) {
+            addAlert('Please enter a valid email address', 'error');
+            return;
+        }
+
+        try {
+            const updated = await api.updateProfile(name, email);
+            currentProfile = updated;
+            addAlert('Profile updated successfully!', 'success');
+        } catch (error) {
+            addAlert(`Update failed: ${error.message}`, 'error');
+        }
+    }
+
+    function resetForm() {
+        if (currentProfile) {
+            document.getElementById('name').value = currentProfile.name || '';
+            document.getElementById('email').value = currentProfile.email || '';
+            addAlert('Form reset', 'info');
+        }
+    }
+
+    // Load payment history
+    async function loadPaymentHistory() {
+        try {
+            const response = await api.getPaymentHistory(1);
+            const paymentsList = document.getElementById('paymentsList');
+            
+            if (response.results.length === 0) {
+                paymentsList.innerHTML = '<p class="text-muted">No payment history</p>';
+                return;
+            }
+
+            paymentsList.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${response.results.map(payment => `
+                            <tr>
+                                <td>${payment.transaction_id}</td>
+                                <td>${formatPrice(payment.amount)}</td>
+                                <td><strong style="color:#2c3e50;">${payment.status.toUpperCase()}</strong></td>
+                                <td>${formatDate(payment.created_at)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        } catch (error) {
+            console.error('Error loading payment history:', error);
+        }
+    }
+
+    async function logout() {
+        try {
+            await api.logout();
+            api.clearToken();
+            window.location.href = '/';
+        } catch (error) {
+            addAlert('Logout failed', 'error');
+        }
+    }
+
+    // Initialize
+    window.addEventListener('load', () => {
+        loadProfile();
+        loadPaymentHistory();
+    });
+</script>
+
+</body>
+</html>

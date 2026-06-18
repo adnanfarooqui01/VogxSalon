@@ -1,0 +1,190 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - VOGX Salon</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <div class="logo">VOGX Salon</div>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/services">Services</a>
+            <a href="/bookings">My Bookings</a>
+        </nav>
+        <div class="auth-links">
+            <div id="userMenu" style="display:flex; gap:1rem; align-items:center;">
+                <span id="userName"></span>
+                <button id="profileBtn" class="btn btn-secondary btn-sm" onclick="window.location.href='/profile'">Profile</button>
+                <button id="logoutBtn" class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- Page Header -->
+    <section style="background-color:#f9f9f9; padding:2rem 0;">
+        <div class="container">
+            <h1>My Bookings</h1>
+            <p class="text-muted">View and manage your salon bookings</p>
+        </div>
+    </section>
+
+    <!-- Bookings Section -->
+    <section>
+        <div class="container">
+            <div style="margin-bottom:2rem;">
+                <label for="statusFilter" style="margin-right:1rem;">Filter by Status:</label>
+                <select id="statusFilter" onchange="filterByStatus()">
+                    <option value="">All Bookings</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="payment_confirmed">Payment Confirmed</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+
+            <div id="bookingsList"></div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="container">
+        <p>&copy; 2026 VOGX Salon. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    let selectedStatus = null;
+
+    // Check authentication
+    async function checkAuth() {
+        if (!api.token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            const profile = await api.getProfile();
+            document.getElementById('userName').textContent = `Hi, ${profile.name}`;
+        } catch (error) {
+            api.clearToken();
+            window.location.href = '/login';
+        }
+    }
+
+    // Load bookings
+    async function loadBookings() {
+        try {
+            const response = await api.getBookings(1, selectedStatus);
+            const bookingsList = document.getElementById('bookingsList');
+            
+            if (response.results.length === 0) {
+                bookingsList.innerHTML = '<p class="text-center text-muted">No bookings found</p>';
+                return;
+            }
+
+            bookingsList.innerHTML = response.results.map(booking => `
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3>${booking.service_name}</h3>
+                        <span class="text-muted">Booking ID: ${booking.id}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                            <div>
+                                <p><strong>Date:</strong> ${formatDate(booking.booking_date)}</p>
+                                <p><strong>Time:</strong> ${booking.booking_time}</p>
+                            </div>
+                            <div>
+                                <p><strong>Duration:</strong> ${booking.duration_minutes} minutes</p>
+                                <p><strong>Price:</strong> ${formatPrice(booking.total_price)}</p>
+                            </div>
+                            <div>
+                                <p><strong>Status:</strong> <span style="color:#2c3e50; font-weight:600;">${booking.status.toUpperCase()}</span></p>
+                                <p><strong>Payment:</strong> ${booking.is_paid ? 'Paid' : 'Pending'}</p>
+                            </div>
+                        </div>
+                        ${booking.notes ? `<p class="mt-2"><strong>Notes:</strong> ${booking.notes}</p>` : ''}
+                    </div>
+                    <div class="card-footer">
+                        ${booking.status === 'pending' ? `
+                            <button class="btn btn-primary btn-sm" onclick="proceedToPayment(${booking.id})">Proceed to Payment</button>
+                            <button class="btn btn-danger btn-sm" onclick="cancelBooking(${booking.id})">Cancel</button>
+                        ` : `
+                            <button class="btn btn-secondary btn-sm" onclick="viewDetails(${booking.id})">View Details</button>
+                        `}
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            showAlert(`Error loading bookings: ${error.message}`, 'error');
+        }
+    }
+
+    function filterByStatus() {
+        selectedStatus = document.getElementById('statusFilter').value;
+        loadBookings();
+    }
+
+    async function proceedToPayment(bookingId) {
+        if (!confirm('Proceed to payment?')) return;
+        
+        try {
+            const order = await api.createPaymentOrder(bookingId);
+            showAlert(`Payment order created. Order ID: ${order.order_id}`, 'success');
+            // TODO: Integrate with Razorpay payment gateway
+        } catch (error) {
+            showAlert(`Payment failed: ${error.message}`, 'error');
+        }
+    }
+
+    async function cancelBooking(bookingId) {
+        if (!confirm('Are you sure you want to cancel this booking?')) return;
+        
+        try {
+            await api.updateBooking(bookingId, 'cancelled');
+            showAlert('Booking cancelled successfully', 'success');
+            loadBookings();
+        } catch (error) {
+            showAlert(`Cancellation failed: ${error.message}`, 'error');
+        }
+    }
+
+    async function viewDetails(bookingId) {
+        try {
+            const booking = await api.getBookingDetail(bookingId);
+            alert(`Booking Details:\nID: ${booking.id}\nService: ${booking.service_name}\nDate: ${formatDate(booking.booking_date)}\nStatus: ${booking.status}\nPrice: ${formatPrice(booking.total_price)}`);
+        } catch (error) {
+            showAlert(`Error loading details: ${error.message}`, 'error');
+        }
+    }
+
+    async function logout() {
+        try {
+            await api.logout();
+            api.clearToken();
+            window.location.href = '/';
+        } catch (error) {
+            showAlert('Logout failed', 'error');
+        }
+    }
+
+    // Initialize
+    window.addEventListener('load', () => {
+        checkAuth();
+        loadBookings();
+    });
+</script>
+
+</body>
+</html>
