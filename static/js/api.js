@@ -43,7 +43,7 @@ class VogxAPI {
             if (!response.ok) {
                 if (response.status === 401) {
                     this.clearToken();
-                    window.location.href = '/';
+                    window.location.href = '/login';
                 }
                 const errorData = await response.json();
                 throw new Error(errorData.detail || 'API Error');
@@ -76,28 +76,45 @@ class VogxAPI {
     }
 
     // Services Endpoints
-    async getServices(page = 1, categoryId = null) {
-        let url = `/services/services/?page=${page}`;
+    async getServices(page = 1, categoryId = null, gender = null) {
+        let url = `/services/services/?page=${page}&is_available=true`;
         if (categoryId) {
             url += `&category=${categoryId}`;
+        }
+        if (gender) {
+            url += `&gender=${gender}`;
         }
         return this.request(url, 'GET');
     }
 
-    async getCategories() {
-        return this.request('/services/categories/', 'GET');
+    async getServiceDetail(serviceId) {
+        return this.request(`/services/services/${serviceId}/`, 'GET');
+    }
+
+    async getCategories(gender = null) {
+        let url = '/services/categories/?show_on_home=true';
+        if (gender) {
+            url += `&gender=${gender}`;
+        }
+        return this.request(url, 'GET');
+    }
+
+    // Packages Endpoints
+    async getPackages(page = 1, gender = null) {
+        let url = `/services/packages/?page=${page}&is_available=true`;
+        if (gender) {
+            url += `&gender=${gender}`;
+        }
+        return this.request(url, 'GET');
+    }
+
+    async getPackageDetail(packageId) {
+        return this.request(`/services/packages/${packageId}/`, 'GET');
     }
 
     // Bookings Endpoints
-    async createBooking(serviceId, bookingDate, bookingTime, durationMinutes, totalPrice, notes = '') {
-        return this.request('/bookings/bookings/', 'POST', {
-            service: serviceId,
-            booking_date: bookingDate,
-            booking_time: bookingTime,
-            duration_minutes: durationMinutes,
-            total_price: totalPrice,
-            notes: notes
-        });
+    async createBooking(data) {
+        return this.request('/bookings/bookings/', 'POST', data);
     }
 
     async getBookings(page = 1, status = null) {
@@ -112,11 +129,8 @@ class VogxAPI {
         return this.request(`/bookings/bookings/${bookingId}/`, 'GET');
     }
 
-    async updateBooking(bookingId, status, notes = '') {
-        return this.request(`/bookings/bookings/${bookingId}/`, 'PATCH', {
-            status,
-            notes
-        });
+    async updateBooking(bookingId, data) {
+        return this.request(`/bookings/bookings/${bookingId}/`, 'PATCH', data);
     }
 
     // Payments Endpoints
@@ -132,11 +146,8 @@ class VogxAPI {
         });
     }
 
-    async getPaymentHistory(page = 1, status = null) {
-        let url = `/payments/history/?page=${page}`;
-        if (status) {
-            url += `&status=${status}`;
-        }
+    async getPaymentHistory(page = 1) {
+        let url = `/payments/payments/?page=${page}`;
         return this.request(url, 'GET');
     }
 }
@@ -163,12 +174,18 @@ function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString('en-IN', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        day: 'numeric'
     });
 }
 
 function formatPrice(price) {
     return `₹${parseFloat(price).toFixed(2)}`;
+}
+
+function formatTime(timeString) {
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
 }
