@@ -9,13 +9,15 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from frontend_views import index, login, services, bookings, profile
+from frontend_views import index, login, services_listing, service_detail, bookings, profile, cart
 
 urlpatterns = [
     # Frontend routes
     path('', index, name='home'),
     path('login', login, name='login'),
-    path('services', services, name='services'),
+    path('services', services_listing, name='services'),
+    path('service/<int:service_id>', service_detail, name='service_detail'),
+    path('cart', cart, name='cart'),
     path('bookings', bookings, name='bookings'),
     path('profile', profile, name='profile'),
     

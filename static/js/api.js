@@ -7,13 +7,47 @@ class VogxAPI {
         this.token = localStorage.getItem('auth_token');
     }
 
-    getHeaders() {
+    // Get CSRF token from cookie or meta tag
+    getCSRFToken() {
+        let csrfToken = null;
+        
+        // Try to get from meta tag
+        const csrfMetaTag = document.querySelector('[name=csrftoken]');
+        if (csrfMetaTag) {
+            csrfToken = csrfMetaTag.getAttribute('content');
+        }
+        
+        // Try to get from cookie
+        if (!csrfToken) {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') {
+                    csrfToken = value;
+                    break;
+                }
+            }
+        }
+        
+        return csrfToken;
+    }
+
+    getHeaders(method = 'GET') {
         const headers = {
             'Content-Type': 'application/json',
         };
         if (this.token) {
             headers['Authorization'] = `Token ${this.token}`;
         }
+        
+        // Add CSRF token for POST/PUT/PATCH/DELETE requests
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
+            const csrfToken = this.getCSRFToken();
+            if (csrfToken) {
+                headers['X-CSRFToken'] = csrfToken;
+            }
+        }
+        
         return headers;
     }
 
@@ -31,7 +65,7 @@ class VogxAPI {
         const url = `${API_BASE_URL}${endpoint}`;
         const options = {
             method,
-            headers: this.getHeaders(),
+            headers: this.getHeaders(method),
         };
 
         if (data) {
@@ -149,6 +183,19 @@ class VogxAPI {
     async getPaymentHistory(page = 1) {
         let url = `/payments/payments/?page=${page}`;
         return this.request(url, 'GET');
+    }
+
+    // Reviews Endpoints
+    async getReviews(page = 1) {
+        return this.request(`/bookings/reviews/?page=${page}`, 'GET');
+    }
+
+    async createReview(bookingId, rating, comment) {
+        return this.request('/bookings/reviews/', 'POST', {
+            booking: bookingId,
+            rating,
+            comment
+        });
     }
 }
 

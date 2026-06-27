@@ -5,8 +5,10 @@ Base settings shared between development and production.
 """
 
 from pathlib import Path
-from decouple import config, Csv
+from decouple import AutoConfig, Csv
 import os
+
+config = AutoConfig()
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -71,6 +73,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'salon_project.context_processors.firebase_context',
             ],
         },
     },
@@ -167,8 +170,16 @@ RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
 RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
 RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET', default='')
 
-# Firebase
+# Firebase Configuration
+
 FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='firebase-adminsdk.json')
+FIREBASE_PROJECT_ID = config('FIREBASE_PROJECT_ID', default='vogxsalon')
+FIREBASE_DATABASE_URL = config('FIREBASE_DATABASE_URL', default='https://vogxsalon.firebaseio.com')
+FIREBASE_API_KEY = config('FIREBASE_API_KEY', default='')
+FIREBASE_AUTH_DOMAIN = config('FIREBASE_AUTH_DOMAIN', default='vogxsalon.firebaseapp.com')
+FIREBASE_MESSAGING_SENDER_ID = config('FIREBASE_MESSAGING_SENDER_ID', default='')
+FIREBASE_APP_ID = config('FIREBASE_APP_ID', default='')
+FIREBASE_STORAGE_BUCKET = config('FIREBASE_STORAGE_BUCKET', default='vogxsalon.appspot.com')
 
 # Jazzmin admin config
 JAZZMIN_SETTINGS = {

@@ -7,20 +7,32 @@ from django.views.decorators.http import require_http_methods
 
 @require_http_methods(["GET"])
 def index(request):
-    """Home page"""
-    return render(request, 'index.html')
+    """Home page with packages, categories, and gender toggle"""
+    return render(request, 'index_new.html')
+
+
+@require_http_methods(["GET"])
+def services_listing(request):
+    """Services listing page with category pills and sticky navigation"""
+    return render(request, 'services_listing.html')
+
+
+@require_http_methods(["GET"])
+def service_detail(request, service_id):
+    """Service detail page with steps and similar services"""
+    return render(request, 'service_detail.html', {'service_id': service_id})
 
 
 @require_http_methods(["GET"])
 def login(request):
-    """Login page"""
+    """Login page with OTP authentication"""
     return render(request, 'login.html')
 
 
 @require_http_methods(["GET"])
-def services(request):
-    """Services listing page"""
-    return render(request, 'services.html')
+def cart(request):
+    """Shopping cart page"""
+    return render(request, 'cart.html')
 
 
 @require_http_methods(["GET"])

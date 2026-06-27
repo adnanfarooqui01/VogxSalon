@@ -1,0 +1,303 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrftoken" content="{{ csrf_token }}">
+    <title>VOGX Salon - Premium At-Home Services</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+{% csrf_token %}
+
+<!-- HEADER -->
+<header>
+    <div class="container" style="padding: 0; margin: 0; max-width: 100%;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; max-width: var(--container-max); margin: 0 auto; width: 100%;">
+            <div class="logo">VOGX</div>
+            
+            <div class="gender-toggle">
+                <button class="gender-btn active" onclick="setGender('men')">👨 Men</button>
+                <button class="gender-btn" onclick="setGender('women')">👩 Women</button>
+            </div>
+            
+            <div class="nav-right">
+                <div class="cart-icon" onclick="window.location.href='/cart'">
+                    🛒
+                    <span class="cart-badge" id="cartBadge">0</span>
+                </div>
+                <div class="auth-links">
+                    <button class="btn-login" id="loginBtn" onclick="window.location.href='/login'">Login</button>
+                    <div id="userMenu" style="display:none; display:flex; gap:1rem; align-items:center;">
+                        <span id="userName" style="font-weight: 600;"></span>
+                        <button class="btn-login" onclick="logout()">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- HERO BANNER -->
+<section class="hero">
+    <h1>Premium Beauty Services At Your Doorstep</h1>
+    <p>Book trusted professionals for salon services at home or visit our salon</p>
+    <a href="#packages" class="btn-cta">Book Now</a>
+</section>
+
+<!-- PACKAGES SECTION -->
+<section class="section" id="packages">
+    <div class="section-header">
+        <h2>Special Packages</h2>
+        <a href="/services" class="see-all">See All →</a>
+    </div>
+    <div class="scroll-container" id="packagesScroll">
+        <!-- Packages loaded here -->
+    </div>
+</section>
+
+<!-- CATEGORIES & SERVICES SECTIONS (Dynamic) -->
+<div id="categorySections">
+    <!-- Will be populated dynamically -->
+</div>
+
+<!-- REVIEWS SECTION -->
+<section class="section">
+    <div class="section-header">
+        <h2>What Our Customers Say</h2>
+    </div>
+    <div class="scroll-container" id="reviewsScroll">
+        <!-- Reviews loaded here -->
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h4>VOGX Salon</h4>
+            <p style="font-size: 0.9rem; color: var(--text-on-dark); margin-bottom: 1rem;">Premium at-home beauty services</p>
+            <div class="social-links">
+                <a href="#" class="social-link">f</a>
+                <a href="#" class="social-link">i</a>
+                <a href="#" class="social-link">w</a>
+                <a href="#" class="social-link">t</a>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h4>Company</h4>
+            <a href="#">About Us</a>
+            <a href="#">Contact Us</a>
+            <a href="#">Careers</a>
+            <a href="#">Blog</a>
+        </div>
+        <div class="footer-section">
+            <h4>Support</h4>
+            <a href="#">FAQs</a>
+            <a href="#">Terms & Conditions</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Refund Policy</a>
+        </div>
+        <div class="footer-section">
+            <h4>Contact</h4>
+            <a href="tel:+91XXXXXXXXXX">📞 +91 XXXXXXXXXX</a>
+            <a href="mailto:info@vogx.com">📧 info@vogx.com</a>
+            <a href="https://wa.me/91XXXXXXXXXX">💬 WhatsApp</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2026 VOGX Salon. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    let currentGender = 'men';
+
+    async function checkAuth() {
+        if (api.token) {
+            try {
+                const profile = await api.getProfile();
+                document.getElementById('loginBtn').style.display = 'none';
+                const userMenu = document.getElementById('userMenu');
+                userMenu.style.display = 'flex';
+                document.getElementById('userName').textContent = `Hi, ${profile.name}`;
+            } catch (error) {
+                api.clearToken();
+            }
+        }
+    }
+
+    function setGender(gender) {
+        currentGender = gender;
+        
+        // Update buttons
+        document.querySelectorAll('.gender-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Reload all content
+        loadPackages();
+        loadCategories();
+    }
+
+    async function loadPackages() {
+        try {
+            const response = await api.getPackages(1, currentGender);
+            const packagesScroll = document.getElementById('packagesScroll');
+            packagesScroll.innerHTML = '';
+            
+            if (response.results.length === 0) {
+                packagesScroll.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No packages available</p>';
+                return;
+            }
+            
+            response.results.forEach(pkg => {
+                const servicesList = pkg.services.map(s => s.name).join(', ');
+                const card = document.createElement('div');
+                card.className = 'package-card';
+                card.onclick = () => window.location.href = `/service/${pkg.services[0].id}`;
+                card.innerHTML = `
+                    <div class="package-card-image" style="background-color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+                        📦
+                    </div>
+                    <div class="package-card-body">
+                        <div class="package-card-title">${pkg.name}</div>
+                        <div class="package-card-services">${servicesList}</div>
+                        <div class="package-card-footer">
+                            <div class="package-card-price">${formatPrice(pkg.package_price)}</div>
+                            <button class="btn-add" onclick="addToCart('package', ${pkg.id}); event.stopPropagation();">Add +</button>
+                        </div>
+                    </div>
+                `;
+                packagesScroll.appendChild(card);
+            });
+        } catch (error) {
+            console.error('Error loading packages:', error);
+        }
+    }
+
+    async function loadCategories() {
+        try {
+            const response = await api.getCategories(currentGender);
+            const sectionsDiv = document.getElementById('categorySections');
+            sectionsDiv.innerHTML = '';
+            
+            if (response.results.length === 0) {
+                sectionsDiv.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-muted);">No categories available</p>';
+                return;
+            }
+            
+            // Create sections for each category
+            for (const category of response.results) {
+                // Get services for this category
+                const servicesResponse = await api.getServices(1, category.id, currentGender);
+                
+                if (servicesResponse.results.length === 0) continue;
+                
+                const section = document.createElement('section');
+                section.className = 'section vertical-section';
+                section.id = `category-${category.id}`;
+                
+                const header = document.createElement('div');
+                header.className = 'section-header';
+                header.innerHTML = `
+                    <h2 class="vertical-section-title">${category.name}</h2>
+                    <a href="/services?category=${category.id}&gender=${currentGender}" class="see-all">See All →</a>
+                `;
+                section.appendChild(header);
+                
+                const grid = document.createElement('div');
+                grid.className = 'services-grid';
+                
+                servicesResponse.results.forEach(service => {
+                    const card = document.createElement('div');
+                    card.className = 'service-card';
+                    card.onclick = () => window.location.href = `/service/${service.id}`;
+                    card.innerHTML = `
+                        <img src="" class="service-card-image" style="background-color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 2rem;" alt="${service.name}">
+                        <div class="service-card-body">
+                            <div class="service-card-title">${service.name}</div>
+                            <div class="service-card-price">${formatPrice(service.price)}</div>
+                            <div class="service-card-duration">⏱️ ${service.duration_minutes} mins</div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+                
+                section.appendChild(grid);
+                sectionsDiv.appendChild(section);
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+        }
+    }
+
+    async function loadReviews() {
+        try {
+            const response = await api.getReviews(1);
+            const reviewsScroll = document.getElementById('reviewsScroll');
+            reviewsScroll.innerHTML = '';
+            
+            if (response.results.length === 0) {
+                reviewsScroll.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No reviews yet</p>';
+                return;
+            }
+            
+            response.results.slice(0, 6).forEach(review => {
+                const card = document.createElement('div');
+                card.className = 'package-card';
+                card.style.width = '250px';
+                card.innerHTML = `
+                    <div class="package-card-body">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--brand-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                                ${review.user ? review.user[0] : 'A'}
+                            </div>
+                            <div>
+                                <div style="font-weight: 700;">${review.user}</div>
+                                <div style="color: var(--brand-primary); font-size: 0.9rem;">${'⭐'.repeat(review.rating)}</div>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">"${review.comment}"</p>
+                    </div>
+                `;
+                reviewsScroll.appendChild(card);
+            });
+        } catch (error) {
+            console.error('Error loading reviews:', error);
+        }
+    }
+
+    function addToCart(type, id) {
+        if (!api.token) {
+            window.location.href = '/login';
+            return;
+        }
+        showAlert(`Added to cart! ${type} ID: ${id}`, 'success');
+    }
+
+    async function logout() {
+        try {
+            await api.logout();
+            api.clearToken();
+            window.location.reload();
+        } catch (error) {
+            showAlert('Logout failed', 'error');
+        }
+    }
+
+    // Initialize
+    window.addEventListener('load', () => {
+        checkAuth();
+        loadPackages();
+        loadCategories();
+        loadReviews();
+    });
+</script>
+
+</body>
+</html>

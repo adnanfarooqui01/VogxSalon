@@ -1,6 +1,6 @@
 /* ==========================================================================
-   VOGX SALON & SPA — MAIN STYLESHEET
-   Palette: maroon/pink primary on warm cream background
+   VOGX SALON - MAIN STYLESHEET
+   Urban Company inspired design with maroon theme
    ========================================================================== */
 
 :root {
@@ -27,17 +27,11 @@
   --border-soft: #ececec;
   --border-strong: #d8d8d8;
 
-  /* Status colors (booking states) */
-  --status-booked-bg: #e9f1ff;
-  --status-booked-text: #1a5fc9;
-  --status-assigned-bg: #fff4e0;
-  --status-assigned-text: #b8740a;
-  --status-progress-bg: #eef0ff;
-  --status-progress-text: #5345d6;
-  --status-completed-bg: #e6f7ec;
-  --status-completed-text: #1f9d52;
-  --status-cancelled-bg: #fdeaea;
-  --status-cancelled-text: #c93a3a;
+  /* Status colors */
+  --status-success-bg: #e6f7ec;
+  --status-success-text: #1f9d52;
+  --status-danger-bg: #fdeaea;
+  --status-danger-text: #c93a3a;
 
   /* Layout */
   --radius-sm: 8px;
@@ -48,6 +42,873 @@
   --shadow-card-hover: 0 10px 28px rgba(26, 26, 26, 0.12);
   --shadow-popup: 0 20px 60px rgba(0, 0, 0, 0.25);
   --container-max: 1240px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  line-height: 1.6;
+}
+
+/* ========== HEADER / NAVBAR ========== */
+
+header {
+  background: white;
+  border-bottom: 1px solid var(--border-soft);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  max-width: var(--container-max);
+  margin: 0 auto;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo:before {
+  content: '';
+  width: 32px;
+  height: 32px;
+  background: var(--brand-primary);
+  border-radius: 6px;
+}
+
+/* Gender Toggle */
+.gender-toggle {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--bg-page);
+  padding: 0.4rem;
+  border-radius: var(--radius-pill);
+}
+
+.gender-btn {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.gender-btn.active {
+  background: var(--brand-primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(179, 23, 78, 0.3);
+}
+
+.gender-btn:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+/* Right side nav */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.cart-icon {
+  position: relative;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--brand-primary);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.auth-links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn-login {
+  padding: 0.6rem 1.2rem;
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+  background: var(--brand-primary-dark);
+  box-shadow: 0 4px 12px rgba(179, 23, 78, 0.3);
+}
+
+/* ========== HERO BANNER ========== */
+
+.hero {
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-dark) 100%);
+  color: white;
+  padding: 3rem 2rem;
+  text-align: center;
+  border-radius: 0;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.btn-cta {
+  display: inline-block;
+  padding: 0.8rem 2rem;
+  background: white;
+  color: var(--brand-primary);
+  border: none;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.btn-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ========== CATEGORY SECTION ========== */
+
+.section {
+  padding: 2.5rem 2rem;
+  max-width: var(--container-max);
+  margin: 0 auto;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.see-all {
+  color: var(--brand-primary);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.see-all:hover {
+  color: var(--brand-primary-dark);
+}
+
+/* Horizontal Scroll Container */
+.scroll-container {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+}
+
+.scroll-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ========== SERVICE CARD ========== */
+
+.service-card {
+  flex: 0 0 auto;
+  width: 200px;
+  background: white;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s ease;
+  scroll-snap-align: start;
+  cursor: pointer;
+}
+
+.service-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
+}
+
+.service-card-image {
+  width: 100%;
+  height: 150px;
+  background: var(--bg-page);
+  object-fit: cover;
+}
+
+.service-card-body {
+  padding: 1rem;
+}
+
+.service-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+  min-height: 2.6rem;
+}
+
+.service-card-category {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.service-card-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  margin-bottom: 0.5rem;
+}
+
+.service-card-duration {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ========== PACKAGE CARD ========== */
+
+.package-card {
+  flex: 0 0 auto;
+  width: 280px;
+  background: white;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s ease;
+  scroll-snap-align: start;
+  cursor: pointer;
+}
+
+.package-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
+}
+
+.package-card-image {
+  width: 100%;
+  height: 180px;
+  background: var(--bg-page);
+  object-fit: cover;
+  position: relative;
+}
+
+.package-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--brand-primary);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.package-card-body {
+  padding: 1.2rem;
+}
+
+.package-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.package-card-services {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+  max-height: 2.4rem;
+  overflow: hidden;
+}
+
+.package-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.package-card-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+/* ========== CATEGORY PILLS (Sticky) ========== */
+
+.category-pills {
+  display: flex;
+  gap: 0.8rem;
+  overflow-x: auto;
+  padding: 1rem 2rem;
+  background: white;
+  border-bottom: 1px solid var(--border-soft);
+  position: sticky;
+  top: var(--header-height, 70px);
+  z-index: 99;
+  scroll-behavior: smooth;
+  max-width: var(--container-max);
+  margin: 0 auto;
+}
+
+.category-pills::-webkit-scrollbar {
+  height: 4px;
+}
+
+.category-pills::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 2px;
+}
+
+.pill {
+  flex: 0 0 auto;
+  padding: 0.6rem 1.2rem;
+  border: 2px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  background: white;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.pill:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+.pill.active {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(179, 23, 78, 0.3);
+}
+
+/* ========== VERTICAL SCROLL SECTION ========== */
+
+.vertical-section {
+  margin-bottom: 2rem;
+  scroll-margin-top: 140px;
+}
+
+.vertical-section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  padding: 0 2rem;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  padding: 0 2rem;
+}
+
+/* ========== SERVICE DETAIL PAGE ========== */
+
+.detail-hero {
+  background: white;
+  padding: 2rem;
+  text-align: center;
+}
+
+.detail-image {
+  width: 100%;
+  max-width: 500px;
+  height: 400px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  margin-bottom: 2rem;
+}
+
+.detail-header {
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.detail-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.detail-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  margin-bottom: 1rem;
+}
+
+.detail-description {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin-bottom: 2rem;
+}
+
+/* Service Steps */
+.steps-section {
+  background: var(--bg-page);
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 2rem;
+}
+
+.steps-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.steps-container {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.step {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.step-number {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  background: var(--brand-primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-top: 2px;
+}
+
+.step-content h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.step-content p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Highlights */
+.highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.highlight {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.highlight:before {
+  content: '✓';
+  color: var(--brand-primary);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+/* ========== BUTTONS ========== */
+
+.btn {
+  display: inline-block;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  text-align: center;
+}
+
+.btn-primary {
+  background: var(--brand-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--brand-primary-dark);
+  box-shadow: 0 4px 12px rgba(179, 23, 78, 0.3);
+}
+
+.btn-full {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  font-size: 1rem;
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.btn-add {
+  background: var(--brand-primary);
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-pill);
+}
+
+.btn-add:hover {
+  background: var(--brand-primary-dark);
+}
+
+/* ========== FOOTER ========== */
+
+footer {
+  background: var(--brand-black);
+  color: var(--text-on-dark);
+  padding: 3rem 2rem 1rem;
+  border-top: 1px solid var(--border-strong);
+}
+
+footer .container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footer-section h4 {
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.footer-section a {
+  display: block;
+  color: var(--text-on-dark);
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.footer-section a:hover {
+  color: var(--brand-primary-light);
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1.5rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.social-links {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.social-link:hover {
+  background: var(--brand-primary);
+}
+
+/* ========== UTILITY CLASSES ========== */
+
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+/* ========== CONTAINER FOR ALL PAGES ========== */
+
+.section, header .container {
+  max-width: var(--container-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  header {
+    padding: 0;
+  }
+  
+  header > div {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .logo {
+    font-size: 1.2rem;
+  }
+
+  .gender-toggle {
+    gap: 0.3rem;
+    padding: 0.3rem;
+  }
+
+  .gender-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .hero {
+    padding: 2rem 1rem;
+  }
+
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .section {
+    padding: 1.5rem 1rem;
+  }
+
+  .service-card {
+    width: 160px;
+  }
+
+  .package-card {
+    width: 220px;
+  }
+
+  .services-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+    padding: 0 1rem;
+  }
+
+  .category-pills {
+    padding: 0.75rem 1rem;
+    max-width: 100%;
+  }
+
+  .detail-image {
+    height: 300px;
+    max-width: 100%;
+  }
+
+  .detail-title {
+    font-size: 1.5rem;
+  }
+
+  .steps-container {
+    gap: 1rem;
+  }
+
+  .detail-hero {
+    padding: 1rem;
+  }
+
+  .btn-full {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gender-toggle {
+    display: none;
+  }
+
+  .nav-right {
+    gap: 0.75rem;
+  }
+
+  .service-card {
+    width: 140px;
+  }
+
+  .service-card-title {
+    font-size: 0.85rem;
+    min-height: auto;
+  }
+
+  .package-card {
+    width: 180px;
+  }
+
+  .hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .hero p {
+    font-size: 0.95rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .detail-title {
+    font-size: 1.3rem;
+  }
+
+  .details-header > div {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .step {
+    gap: 1rem;
+  }
+
+  .highlights {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  header .container {
+    flex-wrap: wrap;
+  }
+
+  .nav-right {
+    gap: 1rem;
+  }
+
+  .hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .service-card {
+    width: 140px;
+  }
+
+  .service-card-image {
+    height: 120px;
+  }
+
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
   --navbar-height: 72px;
 }
 

@@ -3,125 +3,116 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.utils import timezone
-from datetime import timedelta
-import random
+from django.views.decorators.csrf import csrf_exempt
+import logging
 
-from .models import CustomUser, OTPLog
+from .models import CustomUser
 from .serializers import (
     CustomUserSerializer,
-    OTPLogSerializer,
-    PhoneLoginSerializer,
-    VerifyOTPSerializer,
     UserProfileSerializer,
     LogoutSerializer,
 )
+from .firebase_service import verify_firebase_id_token
 
-# Temporary in-memory OTP storage for development
-# In production, use Redis or Celery
-OTP_STORAGE = {}
+logger = logging.getLogger(__name__)
 
 
 # ==================== AUTH ENDPOINTS ====================
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
-def phone_login(request):
-    """Request OTP for phone login"""
-    serializer = PhoneLoginSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
+def verify_firebase_token(request):
+    """
+    Verify Firebase ID token and create/get Django user.
     
-    phone = serializer.validated_data['phone']
+    This endpoint expects a Firebase ID token from the frontend after successful
+    OTP verification. It verifies the token, extracts the phone number, and creates
+    or retrieves the corresponding Django user.
     
-    # Check OTP limit (max 3 per day)
-    today = timezone.now().date()
-    otp_log, created = OTPLog.objects.get_or_create(phone=phone, date=today)
-    
-    if otp_log.count >= 3:
-        return Response(
-            {'detail': 'Maximum OTP requests exceeded. Try again tomorrow.'},
-            status=status.HTTP_429_TOO_MANY_REQUESTS
-        )
-    
-    # Generate random 6-digit OTP
-    otp = str(random.randint(100000, 999999))
-    
-    # Store OTP in memory (with 5-minute expiry)
-    OTP_STORAGE[phone] = {
-        'otp': otp,
-        'expires_at': timezone.now() + timedelta(minutes=5)
+    Request body:
+    {
+        "idToken": "firebase_id_token_from_client",
+        "name": "optional_user_name"
     }
     
-    # Increment OTP request count
-    otp_log.count += 1
-    otp_log.save()
-    
-    # TODO: Send OTP via SMS (Firebase/Twilio)
-    # For now, return in response for testing
-    return Response(
-        {
-            'phone': phone,
-            'message': 'OTP sent successfully',
-            'otp': otp,  # REMOVE IN PRODUCTION
-        },
-        status=status.HTTP_200_OK
-    )
-
-
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def verify_otp(request):
-    """Verify OTP and login user"""
-    serializer = VerifyOTPSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    
-    phone = serializer.validated_data['phone']
-    otp = serializer.validated_data['otp']
-    name = serializer.validated_data.get('name', '')
-    
-    # Verify OTP from storage
-    otp_data = OTP_STORAGE.get(phone)
-    
-    if not otp_data:
+    Response:
+    {
+        "token": "django_auth_token",
+        "user": {...user_data...},
+        "message": "Login successful" or "Account created and logged in"
+    }
+    """
+    try:
+        id_token = request.data.get('idToken')
+        name = request.data.get('name', '')
+        
+        if not id_token:
+            return Response(
+                {'detail': 'idToken is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify Firebase ID token
+        claims = verify_firebase_id_token(id_token)
+        
+        # Extract phone number from Firebase claims
+        firebase_phone = claims.get('phone_number')
+        firebase_uid = claims.get('uid')
+        
+        if not firebase_phone:
+            return Response(
+                {'detail': 'No phone number in Firebase token'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Normalize phone number to E.164 format
+        phone = firebase_phone
+        if not phone.startswith('+'):
+            phone = '+91' + phone.lstrip('0')
+        
+        # Get or create Django user
+        user, created = CustomUser.objects.get_or_create(
+            phone=phone,
+            defaults={
+                'name': name or phone,
+                'firebase_uid': firebase_uid,  # Store Firebase UID for reference
+            }
+        )
+        
+        # Update Firebase UID if not already set
+        if not user.firebase_uid:
+            user.firebase_uid = firebase_uid
+            user.save()
+        
+        # Create or get Django auth token
+        token, _ = Token.objects.get_or_create(user=user)
+        
+        logger.info(f"✓ User authenticated: {phone}")
+        
         return Response(
-            {'detail': 'OTP expired or not found. Request a new OTP.'},
-            status=status.HTTP_400_BAD_REQUEST
+            {
+                'token': token.key,
+                'user': UserProfileSerializer(user).data,
+                'message': 'Login successful' if not created else 'Account created and logged in',
+                'firebase_uid': firebase_uid,
+            },
+            status=status.HTTP_200_OK
+        )
+        
+    except ValueError as e:
+        logger.warning(f"Token verification failed: {str(e)}")
+        return Response(
+            {'detail': str(e)},
+            status=status.HTTP_401_UNAUTHORIZED
         )
     
-    # Check if OTP is expired
-    if timezone.now() > otp_data['expires_at']:
-        del OTP_STORAGE[phone]
+    except Exception as e:
+        logger.error(f"Error in token verification: {str(e)}")
         return Response(
-            {'detail': 'OTP expired. Request a new OTP.'},
-            status=status.HTTP_400_BAD_REQUEST
+            {'detail': 'Authentication failed'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    
-    # Verify OTP matches
-    if otp_data['otp'] != otp:
-        return Response(
-            {'detail': 'Invalid OTP'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    # Clear OTP from storage
-    del OTP_STORAGE[phone]
-    
-    # Get or create user
-    user, created = CustomUser.objects.get_or_create(
-        phone=phone,
-        defaults={'name': name or phone}
-    )
-    
-    # Create or get token
-    token, _ = Token.objects.get_or_create(user=user)
-    
-    return Response(
-        {
-            'token': token.key,
-            'user': UserProfileSerializer(user).data,
-            'message': 'Login successful' if not created else 'Account created and logged in'
-        },
-        status=status.HTTP_200_OK
-    )
 
 
 @api_view(['GET', 'PUT'])
@@ -165,11 +156,3 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAdminUser]
     search_fields = ['phone', 'name', 'email']
     ordering_fields = ['date_joined', 'updated_at', 'name', 'phone']
-
-
-class OTPLogViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = OTPLog.objects.all().order_by('-last_sent')
-    serializer_class = OTPLogSerializer
-    permission_classes = [permissions.IsAdminUser]
-    search_fields = ['phone']
-    ordering_fields = ['date', 'count', 'last_sent']
