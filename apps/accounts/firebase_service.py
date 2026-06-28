@@ -133,30 +133,25 @@ def verify_firebase_id_token(id_token):
     """
     if not FIREBASE_AVAILABLE:
         raise Exception("Firebase Admin SDK not installed")
-    
+
     try:
         # Ensure Firebase is initialized
         if not FIREBASE_INITIALIZED:
             initialize_firebase()
-        
+
         # Verify the token using Firebase Admin SDK
         claims = auth.verify_id_token(id_token)
-        
+
         logger.info(f"✓ Token verified for Firebase UID: {claims.get('uid')}")
         return claims
-        
-    except auth.ExpiredSignatureError:
-        logger.warning("✗ Firebase ID token has expired")
-        raise ValueError("Token has expired. Please log in again.")
-        
+
     except auth.InvalidIdTokenError as e:
         logger.warning(f"✗ Invalid Firebase ID token: {str(e)}")
         raise ValueError("Invalid token. Authentication failed.")
-        
+
     except Exception as e:
         logger.error(f"✗ Error verifying Firebase token: {str(e)}")
-        raise Exception(f"Token verification failed: {str(e)}")
-
+        raise ValueError(f"Token verification failed: {str(e)}")
 
 def get_user_by_phone(phone_number):
     """
