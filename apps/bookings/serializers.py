@@ -1,17 +1,13 @@
 from rest_framework import serializers
-
 from apps.services.models import Service
 from .models import TimeSlot, Booking
 
-
 class TimeSlotSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source='service.name', read_only=True)
-
     class Meta:
         model = TimeSlot
         fields = ['id', 'service', 'service_name', 'date', 'time', 'is_available', 'created_at']
         read_only_fields = ['id', 'service_name', 'created_at']
-
 
 class BookingSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.name', read_only=True)
@@ -33,6 +29,11 @@ class BookingSerializer(serializers.ModelSerializer):
             'duration_minutes',
             'total_price',
             'status',
+            'booking_type',
+            'pincode',
+            'house_number',
+            'street_area',
+            'landmark',
             'notes',
             'is_paid',
             'payment_status',
@@ -65,6 +66,13 @@ class BookingSerializer(serializers.ModelSerializer):
         service = validated_data['service']
         validated_data['user'] = request.user
         validated_data['duration_minutes'] = service.duration_minutes
+        
+        # Calculate total price (service price + fees handled in frontend/passed here)
+        # Usually backend should re-calculate for security
         validated_data['total_price'] = service.price
+        if validated_data.get('booking_type') == 'home':
+            validated_data['total_price'] += 50  # Home visit charge
+        validated_data['total_price'] += 20  # Convenience fee
+        
         validated_data.setdefault('status', 'pending')
         return super().create(validated_data)

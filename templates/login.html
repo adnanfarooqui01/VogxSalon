@@ -526,8 +526,8 @@
             const data = await response.json();
 
             if (data.token) {
-                // Save token to localStorage
-                localStorage.setItem('authToken', data.token);
+                // Save token to localStorage with correct key that api.js expects
+                localStorage.setItem('auth_token', data.token);
                 
                 // Show success message
                 showSuccess('Login successful! Redirecting...');

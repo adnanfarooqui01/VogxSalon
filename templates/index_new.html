@@ -30,9 +30,24 @@
                 </div>
                 <div class="auth-links">
                     <button class="btn-login" id="loginBtn" onclick="window.location.href='/login'">Login</button>
-                    <div id="userMenu" style="display:none; display:flex; gap:1rem; align-items:center;">
-                        <span id="userName" style="font-weight: 600;"></span>
-                        <button class="btn-login" onclick="logout()">Logout</button>
+                    
+                    <!-- Profile Dropdown Menu -->
+                    <div id="userMenu" style="display:none; position:relative;">
+                        <button class="btn-login" id="profileBtn" onclick="toggleProfileMenu()">👤 Profile</button>
+                        <div id="profileDropdown" style="display:none; position:absolute; top:100%; right:0; background:white; border:1px solid #e0e0e0; border-radius:8px; min-width:180px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:1000; margin-top:0.5rem;">
+                            <a href="/profile" style="display:block; padding:0.75rem 1rem; border-bottom:1px solid #e0e0e0; text-decoration:none; color:var(--text-primary); font-size:0.95rem; transition:background 0.2s;">
+                                📋 My Profile
+                            </a>
+                            <a href="/profile?tab=bookings" style="display:block; padding:0.75rem 1rem; border-bottom:1px solid #e0e0e0; text-decoration:none; color:var(--text-primary); font-size:0.95rem; transition:background 0.2s;">
+                                📅 My Bookings
+                            </a>
+                            <a href="/profile?tab=current" style="display:block; padding:0.75rem 1rem; border-bottom:1px solid #e0e0e0; text-decoration:none; color:var(--text-primary); font-size:0.95rem; transition:background 0.2s;">
+                                ⏳ Current Bookings
+                            </a>
+                            <button onclick="logout()" style="width:100%; padding:0.75rem 1rem; border:none; background:transparent; color:#c93a3a; font-size:0.95rem; cursor:pointer; text-align:left; transition:background 0.2s;">
+                                🚪 Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -122,13 +137,34 @@
                 const profile = await api.getProfile();
                 document.getElementById('loginBtn').style.display = 'none';
                 const userMenu = document.getElementById('userMenu');
-                userMenu.style.display = 'flex';
-                document.getElementById('userName').textContent = `Hi, ${profile.name}`;
+                userMenu.style.display = 'block';
             } catch (error) {
                 api.clearToken();
             }
         }
     }
+
+    function toggleProfileMenu() {
+        const dropdown = document.getElementById('profileDropdown');
+        if (dropdown.style.display === 'none') {
+            dropdown.style.display = 'block';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const userMenu = document.getElementById('userMenu');
+        const profileBtn = document.getElementById('profileBtn');
+        const dropdown = document.getElementById('profileDropdown');
+        
+        if (userMenu && profileBtn && dropdown) {
+            if (!userMenu.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        }
+    });
 
     function setGender(gender) {
         currentGender = gender;

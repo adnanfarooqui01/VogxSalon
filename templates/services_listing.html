@@ -1,260 +1,308 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrftoken" content="{{ csrf_token }}">
-    <title>Services - VOGX Salon</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
+{% extends 'base.html' %}
 
-{% csrf_token %}
+{% block title %}Services - VogxSalon{% endblock %}
 
-<!-- HEADER -->
-<header>
-    <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; max-width: var(--container-max); margin: 0 auto; width: 100%;">
-        <div class="logo">VOGX</div>
-        
-        <div class="gender-toggle" style="display: flex; gap: 0.5rem; background: var(--bg-page); padding: 0.4rem; border-radius: var(--radius-pill);">
-            <button class="gender-btn active" onclick="setGender('men')">👨 Men</button>
-            <button class="gender-btn" onclick="setGender('women')">👩 Women</button>
-        </div>
-        
-        <div class="nav-right">
-            <div class="cart-icon" onclick="window.location.href='/cart'">
-                🛒
-                <span class="cart-badge" id="cartBadge">0</span>
-            </div>
-            <button class="btn-login" id="loginBtn" onclick="window.location.href='/login'">Login</button>
-            <div id="userMenu" style="display:none; display:flex; gap:1rem; align-items:center;">
-                <span id="userName" style="font-weight: 600;"></span>
-                <button class="btn-login" onclick="logout()">Logout</button>
-            </div>
-        </div>
-    </div>
-</header>
+{% block extra_css %}
+<style>
+    .services-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
 
-<!-- CATEGORY PILLS (STICKY) -->
-<div class="category-pills" id="categoryPills">
-    <div class="pill active" data-category="packages" onclick="scrollToCategory('packages', event)">
-        📦 Packages
-    </div>
-    <!-- Category pills will be added here -->
-</div>
+    .services-header {
+        margin-bottom: 2rem;
+    }
 
-<!-- PACKAGES SECTION -->
-<section class="section vertical-section" id="packages" style="scroll-margin-top: 160px;">
-    <div class="section-header">
-        <h2 class="vertical-section-title">Special Packages</h2>
-    </div>
-    <div class="scroll-container" id="packagesScroll">
-        <!-- Packages loaded here -->
-    </div>
-</section>
+    .services-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
 
-<!-- CATEGORIES & SERVICES SECTIONS (Dynamic) -->
-<div id="categorySections">
-    <!-- Will be populated dynamically -->
-</div>
+    .services-subtitle {
+        color: var(--text-muted);
+    }
 
-<!-- FOOTER -->
-<footer>
-    <div class="footer-content">
-        <div class="footer-section">
-            <h4>VOGX Salon</h4>
-            <p style="font-size: 0.9rem;">Premium at-home beauty services</p>
-        </div>
-        <div class="footer-section">
-            <h4>Quick Links</h4>
-            <a href="/">Home</a>
-            <a href="/services">Services</a>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        <p>&copy; 2026 VOGX Salon. All rights reserved.</p>
-    </div>
-</footer>
+    .category-section {
+        margin-bottom: 3rem;
+    }
 
-<script src="{% static 'js/api.js' %}"></script>
-<script>
-    let currentGender = 'men';
-    let categories = [];
+    .category-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border-soft);
+    }
 
-    async function checkAuth() {
-        if (api.token) {
-            try {
-                const profile = await api.getProfile();
-                document.getElementById('loginBtn').style.display = 'none';
-                const userMenu = document.getElementById('userMenu');
-                userMenu.style.display = 'flex';
-                document.getElementById('userName').textContent = `Hi, ${profile.name}`;
-            } catch (error) {
-                api.clearToken();
-            }
+    .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .service-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .service-card:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        transform: translateY(-4px);
+    }
+
+    .service-card-image {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 3rem;
+    }
+
+    .service-card-body {
+        padding: 1.5rem;
+    }
+
+    .service-card-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .service-card-description {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+
+    .service-card-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-soft);
+    }
+
+    .service-card-price {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--brand-primary);
+    }
+
+    .service-card-duration {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .service-card-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .service-card-btn {
+        flex: 1;
+        padding: 0.75rem;
+        border: none;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .add-to-cart-btn {
+        background: var(--brand-primary);
+        color: white;
+    }
+
+    .add-to-cart-btn:hover {
+        background: var(--brand-secondary);
+    }
+
+    .view-details-btn {
+        background: var(--bg-light);
+        color: var(--text-primary);
+        border: 1px solid var(--border-soft);
+    }
+
+    .view-details-btn:hover {
+        background: var(--border-soft);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state-message {
+        color: var(--text-muted);
+        font-size: 1.1rem;
+    }
+
+    .success-toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--status-success-bg);
+        color: var(--status-success-text);
+        padding: 1rem 1.5rem;
+        border-radius: var(--radius-md);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        animation: slideIn 0.3s ease;
+        z-index: 100;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
         }
     }
 
-    function setGender(gender) {
-        currentGender = gender;
-        
-        // Update buttons
-        document.querySelectorAll('.gender-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        event.target.classList.add('active');
-        
-        // Reload all content
-        loadCategories();
-    }
+    @media (max-width: 768px) {
+        .services-grid {
+            grid-template-columns: 1fr;
+        }
 
-    async function loadCategories() {
+        .services-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="services-container">
+    <!-- Header -->
+    <div class="services-header">
+        <h1 class="services-title">Our Services</h1>
+        <p class="services-subtitle">Browse and book your favorite salon services</p>
+    </div>
+
+    <!-- Categories and Services -->
+    <div id="categoriesContainer"></div>
+</div>
+
+<script>
+    let currentGender = 'men';
+
+    async function loadServices() {
         try {
-            const response = await api.getCategories(currentGender);
-            categories = response.results;
-            
-            // Update category pills
-            const pillsDiv = document.getElementById('categoryPills');
-            pillsDiv.innerHTML = `
-                <div class="pill active" data-category="packages" onclick="scrollToCategory('packages', event)">
-                    📦 Packages
-                </div>
-            `;
-            
-            categories.forEach(category => {
-                const pill = document.createElement('div');
-                pill.className = 'pill';
-                pill.setAttribute('data-category', `category-${category.id}`);
-                pill.textContent = category.name;
-                pill.onclick = (e) => scrollToCategory(`category-${category.id}`, e);
-                pillsDiv.appendChild(pill);
-            });
-            
-            // Load packages
-            await loadPackages();
-            
-            // Load sections for each category
-            const sectionsDiv = document.getElementById('categorySections');
-            sectionsDiv.innerHTML = '';
-            
-            for (const category of categories) {
-                const servicesResponse = await api.getServices(1, category.id, currentGender);
-                
+            const params = new URLSearchParams(window.location.search);
+            currentGender = params.get('gender') || 'men';
+
+            const apiInstance = await initializeAPI();
+            const categoriesResponse = await apiInstance.getCategories(currentGender);
+
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
+
+            if (categoriesResponse.results.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p class="empty-state-message">No services available for this category</p>
+                    </div>
+                `;
+                return;
+            }
+
+            for (const category of categoriesResponse.results) {
+                const servicesResponse = await apiInstance.getServices(1, category.id, currentGender);
+
                 if (servicesResponse.results.length === 0) continue;
-                
-                const section = document.createElement('section');
-                section.className = 'section vertical-section';
-                section.id = `category-${category.id}`;
-                section.style.scrollMarginTop = '160px';
-                
-                const titleDiv = document.createElement('h2');
-                titleDiv.className = 'vertical-section-title';
-                titleDiv.textContent = category.name;
-                section.appendChild(titleDiv);
-                
+
+                const section = document.createElement('div');
+                section.className = 'category-section';
+
+                const title = document.createElement('h2');
+                title.className = 'category-title';
+                title.textContent = category.name;
+                section.appendChild(title);
+
                 const grid = document.createElement('div');
                 grid.className = 'services-grid';
-                
+
                 servicesResponse.results.forEach(service => {
                     const card = document.createElement('div');
                     card.className = 'service-card';
-                    card.onclick = () => window.location.href = `/service/${service.id}`;
+
                     card.innerHTML = `
-                        <div class="service-card-image" style="background-color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: pointer;">
-                            💇
-                        </div>
+                        <div class="service-card-image">💇</div>
                         <div class="service-card-body">
-                            <div class="service-card-title">${service.name}</div>
-                            <div class="service-card-price">${formatPrice(service.price)}</div>
-                            <div class="service-card-duration">⏱️ ${service.duration_minutes}m</div>
+                            <h3 class="service-card-title">${service.name}</h3>
+                            <p class="service-card-description">${service.description.substring(0, 80)}...</p>
+                            <div class="service-card-meta">
+                                <span class="service-card-price">₹${parseFloat(service.price).toFixed(2)}</span>
+                                <span class="service-card-duration">⏱️ ${service.duration_minutes} mins</span>
+                            </div>
+                            <div class="service-card-buttons">
+                                <button class="service-card-btn add-to-cart-btn" onclick="addToCart(${service.id}, '${service.name}', ${service.price})">Add to Cart</button>
+                                <button class="service-card-btn view-details-btn" onclick="window.location.href='/service/${service.id}'">Details</button>
+                            </div>
                         </div>
                     `;
+
                     grid.appendChild(card);
                 });
-                
+
                 section.appendChild(grid);
-                sectionsDiv.appendChild(section);
+                container.appendChild(section);
             }
         } catch (error) {
-            console.error('Error loading categories:', error);
+            console.error('Error loading services:', error);
+            document.getElementById('categoriesContainer').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <p class="empty-state-message">Error loading services. Please try again.</p>
+                </div>
+            `;
         }
     }
 
-    async function loadPackages() {
-        try {
-            const response = await api.getPackages(1, currentGender);
-            const packagesScroll = document.getElementById('packagesScroll');
-            packagesScroll.innerHTML = '';
-            
-            if (response.results.length === 0) {
-                packagesScroll.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 2rem;">No packages available</p>';
-                return;
-            }
-            
-            response.results.forEach(pkg => {
-                const servicesList = pkg.services.map(s => s.name).join(', ');
-                const card = document.createElement('div');
-                card.className = 'package-card';
-                card.onclick = () => window.location.href = `/service/${pkg.services[0].id}`;
-                card.innerHTML = `
-                    <div class="package-card-image" style="background-color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
-                        📦
-                    </div>
-                    <div class="package-card-body">
-                        <div class="package-card-title">${pkg.name}</div>
-                        <div class="package-card-services">${servicesList}</div>
-                        <div class="package-card-footer">
-                            <div class="package-card-price">${formatPrice(pkg.package_price)}</div>
-                            <button class="btn-add" onclick="addToCart('package', ${pkg.id}); event.stopPropagation();">Add +</button>
-                        </div>
-                    </div>
-                `;
-                packagesScroll.appendChild(card);
-            });
-        } catch (error) {
-            console.error('Error loading packages:', error);
-        }
-    }
-
-    function scrollToCategory(categoryId, event) {
-        // Update active pill
-        document.querySelectorAll('.pill').forEach(pill => {
-            pill.classList.remove('active');
+    function addToCart(serviceId, serviceName, price) {
+        const cart = getCart();
+        cart.push({
+            id: serviceId,
+            name: serviceName,
+            price: price
         });
-        event.target.classList.add('active');
-        
-        // Scroll to section
-        const element = document.getElementById(categoryId);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }
+        localStorage.setItem('vogx_cart', JSON.stringify(cart));
+        updateCartBadge();
 
-    function addToCart(type, id) {
-        if (!api.token) {
-            window.location.href = '/login';
-            return;
-        }
-        showAlert(`Added to cart!`, 'success');
-    }
+        // Show success toast
+        const toast = document.createElement('div');
+        toast.className = 'success-toast';
+        toast.textContent = `✓ ${serviceName} added to cart!`;
+        document.body.appendChild(toast);
 
-    async function logout() {
-        try {
-            await api.logout();
-            api.clearToken();
-            window.location.href = '/';
-        } catch (error) {
-            showAlert('Logout failed', 'error');
-        }
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
     }
 
     // Initialize
     window.addEventListener('load', () => {
-        checkAuth();
-        loadCategories();
+        loadServices();
     });
 </script>
-
-</body>
-</html>
+{% endblock %}

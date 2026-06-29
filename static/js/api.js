@@ -147,8 +147,18 @@ class VogxAPI {
     }
 
     // Bookings Endpoints
-    async createBooking(data) {
-        return this.request('/bookings/bookings/', 'POST', data);
+    async createBooking(dataOrServiceId, bookingDate = null, bookingTime = null, bookingType = 'salon', notes = '') {
+        let payload = dataOrServiceId;
+        if (typeof dataOrServiceId === 'number' || typeof dataOrServiceId === 'string') {
+            payload = {
+                service: dataOrServiceId,
+                booking_date: bookingDate,
+                booking_time: bookingTime,
+                booking_type: bookingType,
+                notes: notes
+            };
+        }
+        return this.request('/bookings/bookings/', 'POST', payload);
     }
 
     async getBookings(page = 1, status = null) {

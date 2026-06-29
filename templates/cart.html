@@ -1,215 +1,1190 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrftoken" content="{{ csrf_token }}">
-    <title>Shopping Cart - VOGX Salon</title>
+    <title>{% block title %}VogxSalon - Book Your Beauty Services{% endblock %}</title>
+    {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
+    <style>
+        :root {
+            --brand-primary: #ff6b9d;
+            --brand-secondary: #c44569;
+            --text-primary: #2d3436;
+            --text-secondary: #636e72;
+            --text-muted: #b2bec3;
+            --border-soft: #dfe6e9;
+            --bg-light: #f5f6fa;
+            --status-success-bg: #d4edda;
+            --status-success-text: #155724;
+            --status-danger-bg: #f8d7da;
+            --status-danger-text: #721c24;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
 
-{% csrf_token %}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<!-- HEADER -->
-<header>
-    <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; max-width: var(--container-max); margin: 0 auto; width: 100%;">
-        <a href="/" style="color: var(--text-primary); text-decoration: none; cursor: pointer;">← Back</a>
-        <div class="logo">VOGX</div>
-        <div class="nav-right" style="flex: 1; justify-content: flex-end;">
-            <button class="btn-login" id="loginBtn" onclick="window.location.href='/login'">Login</button>
-            <div id="userMenu" style="display:none; display:flex; gap:1rem; align-items:center;">
-                <span id="userName" style="font-weight: 600;"></span>
-                <button class="btn-login" onclick="logout()">Logout</button>
-            </div>
-        </div>
-    </div>
-</header>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: var(--text-primary);
+            background: #fff;
+            line-height: 1.6;
+        }
 
-<!-- CART SECTION -->
-<section class="section">
-    <div class="container">
-        <h1 style="margin-bottom: 2rem; font-size: 2rem;">Shopping Cart</h1>
-        
-        <div id="emptyCart" style="text-align: center; padding: 3rem 2rem;">
-            <div style="font-size: 4rem; margin-bottom: 1rem;">🛒</div>
-            <p style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 1rem;">Your cart is empty</p>
-            <a href="/services" class="btn btn-primary">Continue Shopping</a>
-        </div>
-        
-        <div id="cartContent" style="display: none;">
-            <div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
-                <!-- Cart Items -->
-                <div>
-                    <div id="cartItems"></div>
-                </div>
-                
-                <!-- Order Summary -->
-                <div style="background: var(--bg-page); padding: 1.5rem; border-radius: var(--radius-md); height: fit-content;">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 1.5rem;">Order Summary</h3>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <span>Subtotal:</span>
-                        <span id="subtotal">₹0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <span>Taxes (18%):</span>
-                        <span id="taxes">₹0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <span>Delivery:</span>
-                        <span id="delivery">Free</span>
-                    </div>
-                    <div style="border-top: 1px solid var(--border-soft); padding-top: 1rem; display: flex; justify-content: space-between; font-weight: 700; font-size: 1.2rem;">
-                        <span>Total:</span>
-                        <span id="total">₹0</span>
-                    </div>
-                    <button class="btn btn-primary btn-full" onclick="proceedToCheckout()" style="margin-top: 1.5rem;">Proceed to Checkout</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+        /* Navbar */
+        .navbar {
+            background: white;
+            border-bottom: 1px solid var(--border-soft);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
 
-<!-- FOOTER -->
-<footer>
-    <div class="footer-content">
-        <div class="footer-section">
-            <h4>VOGX Salon</h4>
-            <p style="font-size: 0.9rem;">Premium at-home beauty services</p>
-        </div>
-        <div class="footer-section">
-            <h4>Quick Links</h4>
-            <a href="/">Home</a>
-            <a href="/services">Services</a>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        <p>&copy; 2026 VOGX Salon. All rights reserved.</p>
-    </div>
-</footer>
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-<script src="{% static 'js/api.js' %}"></script>
-<script>
-    let cart = [];
+        .navbar-center {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            flex: 1;
+            justify-content: center;
+        }
 
-    async function checkAuth() {
-        if (api.token) {
-            try {
-                const profile = await api.getProfile();
-                document.getElementById('loginBtn').style.display = 'none';
-                const userMenu = document.getElementById('userMenu');
-                userMenu.style.display = 'flex';
-                document.getElementById('userName').textContent = `Hi, ${profile.name}`;
-            } catch (error) {
-                api.clearToken();
+        .gender-btn {
+            padding: 0.5rem 1.5rem;
+            border: 2px solid var(--border-soft);
+            background: white;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .gender-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+
+        .gender-btn.active {
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
+            color: white;
+        }
+
+        #genderToggle {
+            display: none;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .cart-icon-container {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--brand-secondary);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .auth-btn {
+            padding: 0.6rem 1.5rem;
+            background: var(--brand-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .auth-btn:hover {
+            background: var(--brand-secondary);
+        }
+
+        .profile-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--brand-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        /* Login Popup */
+        .login-popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-popup-overlay.active {
+            display: flex;
+        }
+
+        .login-popup {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
             }
         }
-    }
 
-    function loadCart() {
-        // Load from localStorage (simulated cart)
-        const savedCart = localStorage.getItem('cart');
-        cart = savedCart ? JSON.parse(savedCart) : [];
-
-        if (cart.length === 0) {
-            document.getElementById('emptyCart').style.display = 'block';
-            document.getElementById('cartContent').style.display = 'none';
-            return;
+        .login-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
         }
 
-        document.getElementById('emptyCart').style.display = 'none';
-        document.getElementById('cartContent').style.display = 'block';
+        .login-popup-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
 
-        renderCartItems();
-        updateOrderSummary();
-    }
+        .login-popup-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
 
-    function renderCartItems() {
-        const cartItemsDiv = document.getElementById('cartItems');
-        cartItemsDiv.innerHTML = '';
+        .login-form-group {
+            margin-bottom: 1.5rem;
+        }
 
-        cart.forEach((item, index) => {
-            const card = document.createElement('div');
-            card.style.display = 'flex';
-            card.style.gap = '1.5rem';
-            card.style.padding = '1.5rem';
-            card.style.borderBottom = '1px solid var(--border-soft)';
-            card.innerHTML = `
-                <div style="flex: 0 0 120px; width: 120px; height: 120px; background: var(--brand-primary); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white;">
-                    💇
+        .login-form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .login-form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .login-form-input:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+        }
+
+        .login-error {
+            display: none;
+            background: var(--status-danger-bg);
+            color: var(--status-danger-text);
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .login-loading {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+            color: var(--text-muted);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--brand-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .login-btn:hover {
+            background: var(--brand-secondary);
+        }
+
+        .login-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .resend-countdown {
+            display: none;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .countdown {
+            font-weight: 700;
+            color: var(--brand-primary);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-light);
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-soft);
+            margin-top: 4rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        main {
+            min-height: calc(100vh - 200px);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">💇 VogxSalon</a>
+        
+        <div class="navbar-center">
+            <div id="genderToggle" style="display: none; gap: 1rem;">
+                <button class="gender-btn" data-gender="men">👨 Men</button>
+                <button class="gender-btn" data-gender="women">👩 Women</button>
+            </div>
+        </div>
+
+        <div class="navbar-right">
+            <div class="cart-icon-container" onclick="window.location.href='/cart'">
+                🛒
+                <span class="cart-badge" id="cartBadge">0</span>
+            </div>
+            <button class="auth-btn" id="loginBtn" onclick="openLoginPopup()">Login</button>
+            <div class="profile-icon" id="profileIcon" onclick="window.location.href='/profile'" style="display: none;"></div>
+        </div>
+    </nav>
+
+    <!-- Login Popup -->
+    <div class="login-popup-overlay" id="loginPopupOverlay">
+        <div class="login-popup">
+            <div class="login-popup-header">
+                <h2 class="login-popup-title">Login</h2>
+                <button class="login-popup-close" onclick="closeLoginPopup()">✕</button>
+            </div>
+
+            <div id="loginError" class="login-error"></div>
+            <div id="loginLoading" class="login-loading">Sending OTP...</div>
+
+            <!-- Step 1: Phone Entry -->
+            <form id="phoneForm" onsubmit="submitPhoneForm(event)">
+                <div class="login-form-group">
+                    <label class="login-form-label">Phone Number</label>
+                    <input type="tel" id="phoneInput" class="login-form-input" placeholder="10-digit number" maxlength="10" required>
                 </div>
-                <div style="flex: 1;">
-                    <h4 style="margin-bottom: 0.5rem;">${item.name}</h4>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">${item.category}</p>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <span style="font-weight: 700; font-size: 1.1rem; color: var(--brand-primary);">${formatPrice(item.price)}</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <button onclick="updateQuantity(${index}, -1)" style="width: 30px; height: 30px; border: 1px solid var(--border-soft); border-radius: 4px; background: white; cursor: pointer;">−</button>
-                            <span style="width: 30px; text-align: center;">${item.quantity}</span>
-                            <button onclick="updateQuantity(${index}, 1)" style="width: 30px; height: 30px; border: 1px solid var(--border-soft); border-radius: 4px; background: white; cursor: pointer;">+</button>
-                            <button onclick="removeFromCart(${index})" style="margin-left: 1rem; padding: 0.5rem 1rem; background: var(--status-danger-bg); color: var(--status-danger-text); border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+                <button type="submit" class="login-btn">Send OTP</button>
+            </form>
+
+            <!-- Step 2: OTP Entry -->
+            <form id="otpForm" onsubmit="submitOTPForm(event)" style="display: none;">
+                <div class="login-form-group">
+                    <label class="login-form-label">OTP Code</label>
+                    <input type="text" id="otpInput" class="login-form-input" placeholder="6-digit code" maxlength="6" required>
+                </div>
+                <div class="login-form-group">
+                    <label class="login-form-label">Name (optional)</label>
+                    <input type="text" id="nameInput" class="login-form-input" placeholder="Your name">
+                </div>
+                <button type="submit" class="login-btn">Verify & Login</button>
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button type="button" id="resendBtn" onclick="resendOTP()" class="login-btn" style="background: var(--text-muted);">Resend OTP</button>
+                    <div id="resendCountdown" class="resend-countdown">
+                        Resend in <span id="countdown">30</span>s
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <main>
+        <div class="container" style="padding: 2rem 1rem;">
+            <h1 style="font-size: 2rem; margin-bottom: 2rem; color: var(--text-primary);">🛒 Shopping Cart</h1>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <!-- Cart Items -->
+                <div>
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-primary);">📋 Items</h2>
+                    <div id="cartItemsContainer" style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-soft); overflow: hidden; margin-bottom: 2rem;">
+                        <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                            Loading cart items...
                         </div>
                     </div>
                 </div>
-            `;
-            cartItemsDiv.appendChild(card);
-        });
-    }
 
-    function updateQuantity(index, change) {
-        cart[index].quantity += change;
-        if (cart[index].quantity <= 0) {
-            removeFromCart(index);
-        } else {
-            localStorage.setItem('cart', JSON.stringify(cart));
-            loadCart();
+                <!-- Booking Details Form -->
+                <div>
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-primary);">📝 Booking Details</h2>
+                    <div style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-soft); padding: 1.5rem;">
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Full Name</label>
+                            <input type="text" id="bookingName" placeholder="Enter your name" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Phone Number</label>
+                            <input type="tel" id="bookingPhone" placeholder="10-digit number" maxlength="10" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Booking Date</label>
+                            <input type="date" id="bookingDate" onchange="loadAvailableTimeSlots(this.value)" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Booking Time Slot</label>
+                            <select id="bookingTime" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem; background: white;">
+                                <option value="">Select a date first</option>
+                            </select>
+                        </div>
+
+                        <div id="homeAddressFields" style="margin-bottom: 1.5rem;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Pincode</label>
+                                    <input type="text" id="bookingPincode" placeholder="Enter pincode" maxlength="10" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">House / Flat No.</label>
+                                    <input type="text" id="bookingHouseNumber" placeholder="House / Flat No." maxlength="50" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Street / Area</label>
+                                <input type="text" id="bookingStreetArea" placeholder="Street, area or landmark" maxlength="255" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Landmark</label>
+                                <input type="text" id="bookingLandmark" placeholder="Optional landmark" maxlength="255" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Notes</label>
+                            <textarea id="bookingNotes" placeholder="Additional preferences or instructions" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem; min-height: 80px; resize: vertical;"></textarea>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-primary);">Service Type</label>
+                            <div style="display: flex; gap: 1rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="radio" name="serviceType" value="home" checked onchange="handleServiceTypeChange()"> 🏠 Home Service
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="radio" name="serviceType" value="salon" onchange="handleServiceTypeChange()"> 🏬 Salon Visit
+                                </label>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">⚠️ Home visit: +₹50 extra charge</p>
+                        </div>
+
+                        <div style="background: var(--bg-light); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                            <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-secondary);">Items Total:</span>
+                                <span id="summarySubtotal" style="font-weight: 600;">₹0.00</span>
+                            </div>
+                            <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-secondary);">Service Charge:</span>
+                                <span id="serviceCharge" style="font-weight: 600;">₹0.00</span>
+                            </div>
+                            <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-secondary);">Convenience Fee:</span>
+                                <span id="convenienceFee" style="font-weight: 600;">₹20.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); padding-top: 0.75rem; border-top: 1px solid var(--border-soft);">
+                                <span>Total Amount:</span>
+                                <span id="summaryTotal">₹0.00</span>
+                            </div>
+                        </div>
+
+                        <button id="confirmBtn" style="width: 100%; padding: 0.75rem; background: var(--brand-primary); color: white; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; font-size: 1rem; transition: background 0.3s ease;" onclick="confirmBooking()">
+                            ✓ Confirm Booking
+                        </button>
+
+                        <button style="width: 100%; padding: 0.75rem; background: transparent; color: var(--brand-primary); border: 2px solid var(--brand-primary); border-radius: var(--radius-md); font-weight: 600; cursor: pointer; font-size: 1rem; margin-top: 0.75rem;" onclick="window.location.href='/services'">
+                            Continue Shopping
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    {% block content %}{% endblock %}
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 VogxSalon. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // API Configuration
+        const API_BASE = '/api';
+        let api = null;
+
+        async function initializeAPI() {
+            const token = localStorage.getItem('auth_token');
+            if (!api) {
+                api = {
+                    token,
+
+                    getCSRFToken() {
+                        const meta = document.querySelector('[name=csrftoken]');
+                        if (meta) return meta.getAttribute('content');
+                        const cookies = document.cookie.split(';');
+                        for (const cookie of cookies) {
+                            const [name, value] = cookie.trim().split('=');
+                            if (name === 'csrftoken') return value;
+                        }
+                        return null;
+                    },
+
+                    async request(endpoint, method = 'GET', data = null) {
+                        const options = {
+                            method,
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        };
+
+                        if (this.token) {
+                            options.headers['Authorization'] = `Token ${this.token}`;
+                        }
+
+                        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
+                            const csrfToken = this.getCSRFToken();
+                            if (csrfToken) {
+                                options.headers['X-CSRFToken'] = csrfToken;
+                            }
+                        }
+
+                        if (data) {
+                            options.body = JSON.stringify(data);
+                        }
+
+                        const response = await fetch(`${API_BASE}${endpoint}`, options);
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.detail || errorData.message || 'Request failed');
+                        }
+                        return await response.json();
+                    },
+
+                    async sendOTP(phone) {
+                        return this.request('/auth/send-otp/', 'POST', { phone });
+                    },
+
+                    async verifyOTP(phone, otp, name) {
+                        const response = await this.request('/auth/verify-otp/', 'POST', { phone, otp, name });
+                        this.token = response.token;
+                        return response;
+                    },
+
+                    async getProfile() {
+                        return this.request('/auth/profile/', 'GET');
+                    },
+
+                    async logout() {
+                        return this.request('/auth/logout/', 'POST');
+                    },
+
+                    async getServices(page = 1, category = null, gender = null) {
+                        let url = `/services/services/?page=${page}`;
+                        if (category) url += `&category=${category}`;
+                        if (gender) url += `&gender=${gender}`;
+                        return this.request(url);
+                    },
+
+                    async getCategories(gender = null) {
+                        let url = '/services/categories/?is_active=true';
+                        if (gender) url += `&gender=${gender}`;
+                        return this.request(url);
+                    },
+
+                    async getPackages(gender = null) {
+                        let url = '/services/packages/?is_available=true';
+                        if (gender) url += `&gender=${gender}`;
+                        return this.request(url);
+                    },
+
+                    async getTimeSlots(serviceId, date) {
+                        return this.request(`/bookings/time-slots/?service=${serviceId}&date=${date}&is_available=true`);
+                    },
+
+                    async createBooking(bookingData) {
+                        return this.request('/bookings/bookings/', 'POST', bookingData);
+                    },
+
+                    setToken(token) {
+                        this.token = token;
+                        localStorage.setItem('auth_token', token);
+                    },
+
+                    clearToken() {
+                        this.token = null;
+                        localStorage.removeItem('auth_token');
+                    }
+                };
+            } else {
+                api.token = token;
+            }
+            return api;
         }
-    }
 
-    function removeFromCart(index) {
-        cart.splice(index, 1);
-        localStorage.setItem('cart', JSON.stringify(cart));
-        loadCart();
-    }
+        /**
+         * Update navbar auth state
+         */
+        async function updateNavbarAuthState() {
+            const token = localStorage.getItem('auth_token');
+            const loginBtn = document.getElementById('loginBtn');
+            const profileIcon = document.getElementById('profileIcon');
 
-    function updateOrderSummary() {
-        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const taxes = subtotal * 0.18;
-        const total = subtotal + taxes;
-
-        document.getElementById('subtotal').textContent = formatPrice(subtotal);
-        document.getElementById('taxes').textContent = formatPrice(taxes);
-        document.getElementById('total').textContent = formatPrice(total);
-    }
-
-    function proceedToCheckout() {
-        if (!api.token) {
-            window.location.href = '/login';
-            return;
+            if (!token) {
+                // Logged out
+                if (loginBtn) loginBtn.style.display = 'block';
+                if (profileIcon) profileIcon.style.display = 'none';
+            } else {
+                // Logged in
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (profileIcon) {
+                    profileIcon.style.display = 'flex';
+                    try {
+                        const apiInstance = await initializeAPI();
+                        const profile = await apiInstance.getProfile();
+                        profileIcon.textContent = profile.name ? profile.name[0].toUpperCase() : '👤';
+                    } catch (error) {
+                        profileIcon.textContent = '👤';
+                    }
+                }
+            }
         }
-        showAlert('Proceeding to checkout...', 'success');
-        // TODO: Implement checkout flow
-    }
 
-    async function logout() {
-        try {
-            await api.logout();
-            api.clearToken();
+        /**
+         * Open login popup
+         */
+        function openLoginPopup() {
+            const overlay = document.getElementById('loginPopupOverlay');
+            if (overlay) {
+                overlay.classList.add('active');
+                document.getElementById('phoneForm').style.display = 'block';
+                document.getElementById('otpForm').style.display = 'none';
+                document.getElementById('phoneInput').value = '';
+                document.getElementById('otpInput').value = '';
+                document.getElementById('nameInput').value = '';
+                document.getElementById('loginError').style.display = 'none';
+            }
+        }
+
+        /**
+         * Close login popup
+         */
+        function closeLoginPopup() {
+            const overlay = document.getElementById('loginPopupOverlay');
+            if (overlay) {
+                overlay.classList.remove('active');
+            }
+        }
+
+        /**
+         * Submit phone form
+         */
+        async function submitPhoneForm(event) {
+            event.preventDefault();
+            const phone = document.getElementById('phoneInput').value.trim();
+            const errorDiv = document.getElementById('loginError');
+            const loadingDiv = document.getElementById('loginLoading');
+            const submitBtn = document.querySelector('#phoneForm button[type="submit"]');
+
+            if (!/^\d{10}$/.test(phone)) {
+                errorDiv.textContent = 'Please enter a valid 10-digit phone number';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                loadingDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = true;
+
+                const apiInstance = await initializeAPI();
+                await apiInstance.sendOTP(phone);
+
+                sessionStorage.setItem('login_phone', phone);
+                document.getElementById('phoneForm').style.display = 'none';
+                document.getElementById('otpForm').style.display = 'block';
+                startResendCountdown();
+            } catch (error) {
+                errorDiv.textContent = error.message || 'Could not send OTP. Try again.';
+                errorDiv.style.display = 'block';
+            } finally {
+                loadingDiv.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        }
+
+        /**
+         * Submit OTP form
+         */
+        async function submitOTPForm(event) {
+            event.preventDefault();
+            const phone = sessionStorage.getItem('login_phone');
+            const otp = document.getElementById('otpInput').value.trim();
+            const name = document.getElementById('nameInput').value.trim();
+            const errorDiv = document.getElementById('loginError');
+            const loadingDiv = document.getElementById('loginLoading');
+            const submitBtn = document.querySelector('#otpForm button[type="submit"]');
+
+            if (!/^\d{4,6}$/.test(otp)) {
+                errorDiv.textContent = 'Please enter a valid OTP';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                loadingDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = true;
+
+                const apiInstance = await initializeAPI();
+                const response = await apiInstance.verifyOTP(phone, otp, name);
+                
+                localStorage.setItem('auth_token', response.token);
+                updateNavbarAuthState();
+                updateCartBadge();
+                closeLoginPopup();
+
+                if (window.onLoginSuccess) {
+                    window.onLoginSuccess();
+                    window.onLoginSuccess = null;
+                }
+            } catch (error) {
+                errorDiv.textContent = error.message || 'OTP verification failed. Please try again.';
+                errorDiv.style.display = 'block';
+            } finally {
+                loadingDiv.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        }
+
+        /**
+         * Resend OTP with cooldown
+         */
+        async function resendOTP() {
+            const phone = sessionStorage.getItem('login_phone');
+            const errorDiv = document.getElementById('loginError');
+
+            if (!phone) {
+                errorDiv.textContent = 'Session expired. Please start over.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const apiInstance = await initializeAPI();
+                await apiInstance.sendOTP(phone);
+                errorDiv.style.display = 'none';
+                startResendCountdown();
+            } catch (error) {
+                errorDiv.textContent = error.message || 'Could not resend OTP. Try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        /**
+         * Start 30-second countdown before allowing resend
+         */
+        function startResendCountdown() {
+            let seconds = 30;
+            const resendBtn = document.getElementById('resendBtn');
+            const resendCountdown = document.getElementById('resendCountdown');
+            const countdown = document.getElementById('countdown');
+
+            if (resendBtn) resendBtn.style.display = 'none';
+            if (resendCountdown) resendCountdown.style.display = 'inline';
+
+            const interval = setInterval(() => {
+                seconds--;
+                if (countdown) countdown.textContent = seconds;
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    if (resendCountdown) resendCountdown.style.display = 'none';
+                    if (resendBtn) resendBtn.style.display = 'inline-block';
+                }
+            }, 1000);
+        }
+
+        /**
+         * Update cart badge count
+         */
+        function updateCartBadge() {
+            const cart = getCart();
+            const badge = document.getElementById('cartBadge');
+            if (badge) {
+                badge.textContent = cart.length;
+            }
+        }
+
+        /**
+         * Get cart from localStorage
+         */
+        function getCart() {
+            const cartJSON = localStorage.getItem('vogx_cart');
+            return cartJSON ? JSON.parse(cartJSON) : [];
+        }
+
+        /**
+         * Setup gender toggle buttons
+         */
+        function setupGenderToggle() {
+            const genderToggle = document.getElementById('genderToggle');
+            if (!genderToggle) return;
+
+            const isServicesPage = window.location.pathname.includes('/services');
+            if (isServicesPage) {
+                genderToggle.style.display = 'flex';
+                const buttons = genderToggle.querySelectorAll('.gender-btn');
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const gender = this.dataset.gender;
+                        window.location.href = `/services?gender=${gender}`;
+                    });
+                });
+
+                const params = new URLSearchParams(window.location.search);
+                const currentGender = params.get('gender') || 'men';
+                buttons.forEach(btn => {
+                    if (btn.dataset.gender === currentGender) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+        }
+
+        /**
+         * Logout user
+         */
+        async function logout() {
+            try {
+                const apiInstance = await initializeAPI();
+                await apiInstance.logout();
+            } catch (error) {
+                console.log('Logout request failed:', error);
+            }
+            localStorage.removeItem('auth_token');
+            updateNavbarAuthState();
             window.location.href = '/';
-        } catch (error) {
-            showAlert('Logout failed', 'error');
         }
-    }
 
-    // Initialize
-    window.addEventListener('load', () => {
-        checkAuth();
-        loadCart();
-    });
-</script>
+        /**
+         * Login if needed (for adding to cart, etc)
+         */
+        function loginIfNeeded(callback) {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.onLoginSuccess = callback;
+                openLoginPopup();
+            } else {
+                callback();
+            }
+        }
 
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeAPI();
+            updateNavbarAuthState();
+            updateCartBadge();
+            setupGenderToggle();
+        });
+
+        // Close popup when clicking outside
+        document.addEventListener('click', function(event) {
+            const overlay = document.getElementById('loginPopupOverlay');
+            if (event.target === overlay) {
+                closeLoginPopup();
+            }
+        });
+
+        /**
+         * Display cart items from localStorage
+         */
+        function displayCart() {
+            const cart = getCart();
+            const container = document.getElementById('cartItemsContainer');
+
+            if (!cart || cart.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 3rem 2rem; text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🛒</div>
+                        <h2 style="color: var(--text-primary); margin-bottom: 0.5rem;">Your cart is empty</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Add some services to get started!</p>
+                        <button onclick="window.location.href='/services'" style="padding: 0.75rem 1.5rem; background: var(--brand-primary); color: white; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">
+                            Browse Services
+                        </button>
+                    </div>
+                `;
+                updateOrderSummary([]);
+                return;
+            }
+
+            let html = '';
+            cart.forEach((item, index) => {
+                html += `
+                    <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-soft); display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.5rem;">${item.name}</h3>
+                            <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="color: var(--text-secondary);">Price: <strong>₹${parseFloat(item.price).toFixed(2)}</strong></span>
+                                <input type="number" id="qty-${index}" value="1" min="1" style="width: 70px; padding: 0.5rem; border: 1px solid var(--border-soft); border-radius: 4px; font-size: 0.9rem;" onchange="updateQuantity(${index}, this.value)">
+                            </div>
+                            <div style="font-weight: 600; color: var(--brand-primary);">Subtotal: ₹<span id="item-total-${index}">${parseFloat(item.price).toFixed(2)}</span></div>
+                        </div>
+                        <button onclick="removeFromCart(${index})" style="padding: 0.5rem 1rem; background: var(--status-danger-bg); color: var(--status-danger-text); border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                            Remove
+                        </button>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            updateOrderSummary(cart);
+        }
+
+        /**
+         * Update service charge based on service type
+         */
+        function updateServiceCharge() {
+            const serviceTypeEl = document.querySelector('input[name="serviceType"]:checked');
+            if (!serviceTypeEl) return;
+            
+            const serviceType = serviceTypeEl.value;
+            const charge = serviceType === 'home' ? 50 : 0;
+            const chargeEl = document.getElementById('serviceCharge');
+            if (chargeEl) chargeEl.textContent = '₹' + charge.toFixed(2);
+
+            const homeAddressFields = document.getElementById('homeAddressFields');
+            if (homeAddressFields) {
+                homeAddressFields.style.display = serviceType === 'home' ? 'block' : 'none';
+            }
+
+            updateOrderSummary(getCart());
+        }
+
+        function handleServiceTypeChange() {
+            updateServiceCharge();
+            const bookingDate = document.getElementById('bookingDate');
+            if (bookingDate && bookingDate.value) {
+                loadAvailableTimeSlots(bookingDate.value);
+            }
+        }
+
+        function setBookingDateMin() {
+            const bookingDate = document.getElementById('bookingDate');
+            if (!bookingDate) return;
+            const today = new Date().toISOString().split('T')[0];
+            bookingDate.min = today;
+            bookingDate.value = today;
+            loadAvailableTimeSlots(today);
+        }
+
+        async function loadAvailableTimeSlots(date) {
+            const bookingTime = document.getElementById('bookingTime');
+            const selectedDate = date || document.getElementById('bookingDate')?.value;
+            if (!bookingTime || !selectedDate) return;
+
+            bookingTime.disabled = true;
+            bookingTime.innerHTML = '<option value="">Loading available time slots...</option>';
+
+            const cart = getCart();
+            if (!cart.length) {
+                bookingTime.innerHTML = '<option value="">No cart items to choose a slot</option>';
+                bookingTime.disabled = true;
+                return;
+            }
+
+            const serviceId = cart[0].id;
+
+            try {
+                const apiInstance = await initializeAPI();
+
+                const response = await apiInstance.getTimeSlots(serviceId, selectedDate);
+                console.log("Time Slot Response:", response);
+
+                const slots = Array.isArray(response)
+                    ? response
+                    : response.results || [];
+
+                if (slots.length === 0) {
+                    bookingTime.innerHTML = '<option value="">No slots available for selected date</option>';
+                    bookingTime.disabled = true;
+                    return;
+                }
+
+                const options = ['<option value="">Select a time slot</option>'];
+
+                slots.forEach(slot => {
+                    options.push(
+                        `<option value="${slot.time}">${slot.time}</option>`
+                    );
+                });
+
+                bookingTime.innerHTML = options.join('');
+                bookingTime.disabled = false;
+
+            } catch (error) {
+                bookingTime.innerHTML = '<option value="">Unable to load time slots</option>';
+                bookingTime.disabled = true;
+                console.error('Time slot load error:', error);
+            }
+        }
+
+        /**
+         * Update order summary totals
+         */
+        function updateOrderSummary(cart) {
+            let totalItems = 0;
+            let totalPrice = 0;
+
+            cart.forEach((item, idx) => {
+                const qty = parseInt(document.getElementById(`qty-${idx}`)?.value) || 1;
+                totalItems += qty;
+                totalPrice += parseFloat(item.price) * qty;
+            });
+
+            const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || 'home';
+            const serviceCharge = serviceType === 'home' ? 50 : 0;
+            const convenienceFee = 20;
+            const finalTotal = totalPrice + serviceCharge + convenienceFee;
+
+            // Update elements safely with null checks
+            const summarySubtotalEl = document.getElementById('summarySubtotal');
+            if (summarySubtotalEl) summarySubtotalEl.textContent = '₹' + totalPrice.toFixed(2);
+            
+            const chargeEl = document.getElementById('serviceCharge');
+            if (chargeEl) chargeEl.textContent = '₹' + serviceCharge.toFixed(2);
+            
+            const convenienceFeeEl = document.getElementById('convenienceFee');
+            if (convenienceFeeEl) convenienceFeeEl.textContent = '₹' + convenienceFee.toFixed(2);
+            
+            const summaryTotalEl = document.getElementById('summaryTotal');
+            if (summaryTotalEl) summaryTotalEl.textContent = '₹' + finalTotal.toFixed(2);
+        }
+
+        /**
+         * Update item quantity
+         */
+        function updateQuantity(index, quantity) {
+            const cart = getCart();
+            const qty = Math.max(1, parseInt(quantity) || 1);
+            const qtyInput = document.getElementById(`qty-${index}`);
+            if (qtyInput) qtyInput.value = qty;
+            
+            const itemTotal = parseFloat(cart[index].price) * qty;
+            const itemTotalEl = document.getElementById(`item-total-${index}`);
+            if (itemTotalEl) itemTotalEl.textContent = itemTotal.toFixed(2);
+            
+            updateOrderSummary(cart);
+        }
+
+        /**
+         * Remove item from cart
+         */
+        function removeFromCart(index) {
+            const cart = getCart();
+            const itemName = cart[index].name;
+            cart.splice(index, 1);
+            localStorage.setItem('vogx_cart', JSON.stringify(cart));
+            updateCartBadge();
+            displayCart();
+
+            // Show success toast
+            const toast = document.createElement('div');
+            toast.className = 'success-toast';
+            toast.textContent = `✓ ${itemName} removed from cart`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        /**
+         * Confirm booking
+         */
+        async function confirmBooking() {
+            const cart = getCart();
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+
+            // Validate form
+            const name = document.getElementById('bookingName').value.trim();
+            const phone = document.getElementById('bookingPhone').value.trim();
+            const serviceType = document.querySelector('input[name="serviceType"]:checked').value;
+
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+            if (!phone || phone.length !== 10) {
+                alert('Please enter a valid 10-digit phone number');
+                return;
+            }
+
+            const bookingDate = document.getElementById('bookingDate').value;
+            const bookingTime = document.getElementById('bookingTime').value;
+            const pincode = document.getElementById('bookingPincode').value.trim();
+            const houseNumber = document.getElementById('bookingHouseNumber').value.trim();
+            const streetArea = document.getElementById('bookingStreetArea').value.trim();
+            const landmark = document.getElementById('bookingLandmark').value.trim();
+            const notes = document.getElementById('bookingNotes').value.trim();
+
+            if (!bookingDate) {
+                alert('Please select a booking date');
+                return;
+            }
+            if (!bookingTime) {
+                alert('Please select a booking time');
+                return;
+            }
+
+            if (serviceType === 'home') {
+                if (!pincode || !houseNumber || !streetArea) {
+                    alert('Please fill in pincode, house number and street / area for home service');
+                    return;
+                }
+            }
+
+            // Check if user is logged in
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.onLoginSuccess = confirmBooking;
+                openLoginPopup();
+                return;
+            }
+
+            const apiInstance = await initializeAPI();
+
+            try {
+                const confirmBtn = document.getElementById('confirmBtn');
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Processing...';
+
+                const item = cart[0];
+                const bookingData = {
+                    service: item.id,
+                    booking_date: bookingDate,
+                    booking_time: bookingTime.includes(':') && bookingTime.split(':').length === 2 ? `${bookingTime}:00` : bookingTime,
+                    booking_type: serviceType,
+                    notes: notes,
+                };
+
+                if (serviceType === 'home') {
+                    bookingData.pincode = pincode;
+                    bookingData.house_number = houseNumber;
+                    bookingData.street_area = streetArea;
+                    if (landmark) bookingData.landmark = landmark;
+                }
+
+                const result = await apiInstance.createBooking(bookingData);
+
+                localStorage.removeItem('vogx_cart');
+                updateCartBadge();
+
+                alert(`✓ Booking confirmed! Reference ID: ${result.id}`);
+                window.location.href = '/bookings';
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to confirm booking: ' + error.message);
+                const confirmBtn = document.getElementById('confirmBtn');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '✓ Confirm Booking';
+            }
+        }
+
+        // Display cart on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            displayCart();
+            updateServiceCharge();
+            setBookingDateMin();
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
