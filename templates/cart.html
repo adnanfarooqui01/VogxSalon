@@ -406,6 +406,7 @@
                         <div style="margin-bottom: 1.5rem;">
                             <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Booking Date</label>
                             <input type="date" id="bookingDate" onchange="loadAvailableTimeSlots(this.value)" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">You can book today and up to the next 3 days only.</p>
                         </div>
 
                         <div style="margin-bottom: 1.5rem;">
@@ -496,6 +497,8 @@
     <script>
         // API Configuration
         const API_BASE = '/api';
+        let ADVANCE_BOOKING_DAYS = 3;
+        let MIN_BOOKING_NOTICE_HOURS = 0;
         let api = null;
 
         async function initializeAPI() {
@@ -581,6 +584,14 @@
                         let url = '/services/packages/?is_available=true';
                         if (gender) url += `&gender=${gender}`;
                         return this.request(url);
+                    },
+
+                    async getWorkingHours(day) {
+                        return this.request(`/core/working-hours/?day=${day}`);
+                    },
+
+                    async getSalonSettings() {
+                        return this.request('/core/salon-settings/');
                     },
 
                     async getTimeSlots(serviceId, date) {
@@ -955,13 +966,42 @@
             }
         }
 
+        async function loadBookingSettings() {
+            try {
+                const apiInstance = await initializeAPI();
+                const response = await apiInstance.getSalonSettings();
+                const results = Array.isArray(response) ? response : response.results || [];
+                const settings = results[0] || null;
+
+                if (settings) {
+                    ADVANCE_BOOKING_DAYS = Number(settings.advance_booking_days) || ADVANCE_BOOKING_DAYS;
+                    MIN_BOOKING_NOTICE_HOURS = Number(settings.min_booking_notice_hours) || MIN_BOOKING_NOTICE_HOURS;
+                }
+            } catch (error) {
+                console.warn('Could not load salon settings, using defaults.', error);
+            }
+        }
+
         function setBookingDateMin() {
             const bookingDate = document.getElementById('bookingDate');
             if (!bookingDate) return;
-            const today = new Date().toISOString().split('T')[0];
-            bookingDate.min = today;
-            bookingDate.value = today;
-            loadAvailableTimeSlots(today);
+
+            const now = new Date();
+            const earliest = new Date(now.getTime() + MIN_BOOKING_NOTICE_HOURS * 60 * 60 * 1000);
+            bookingDate.min = earliest.toISOString().split('T')[0];
+            bookingDate.max = new Date(now.getTime() + ADVANCE_BOOKING_DAYS * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            bookingDate.value = bookingDate.min;
+            loadAvailableTimeSlots(bookingDate.value);
+        }
+
+        function formatSlotLabel(timeValue) {
+            const [hourString, minuteString] = timeValue.split(':');
+            let hour = parseInt(hourString, 10);
+            const minute = minuteString || '00';
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            if (hour === 0) hour = 12;
+            if (hour > 12) hour -= 12;
+            return `${hour}:${minute} ${ampm}`;
         }
 
         async function loadAvailableTimeSlots(date) {
@@ -983,10 +1023,7 @@
 
             try {
                 const apiInstance = await initializeAPI();
-
                 const response = await apiInstance.getTimeSlots(serviceId, selectedDate);
-                console.log("Time Slot Response:", response);
-
                 const slots = Array.isArray(response)
                     ? response
                     : response.results || [];
@@ -1000,9 +1037,10 @@
                 const options = ['<option value="">Select a time slot</option>'];
 
                 slots.forEach(slot => {
-                    options.push(
-                        `<option value="${slot.time}">${slot.time}</option>`
-                    );
+                    const timeValue = slot.time.includes(':00') && slot.time.split(':').length === 3
+                        ? slot.time.slice(0, 5)
+                        : slot.time;
+                    options.push(`<option value="${slot.time}">${formatSlotLabel(timeValue)}</option>`);
                 });
 
                 bookingTime.innerHTML = options.join('');
@@ -1179,9 +1217,10 @@
         }
 
         // Display cart on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             displayCart();
             updateServiceCharge();
+            await loadBookingSettings();
             setBookingDateMin();
         });
     </script>

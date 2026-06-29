@@ -29,5 +29,5 @@ class WorkingHoursViewSet(viewsets.ModelViewSet):
 class SalonSettingsViewSet(viewsets.ModelViewSet):
 	queryset = SalonSettings.objects.all().order_by('-updated_at')
 	serializer_class = SalonSettingsSerializer
-	permission_classes = [permissions.IsAdminUser]
+	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 	ordering_fields = ['updated_at']
