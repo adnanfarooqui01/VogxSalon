@@ -3,10 +3,11 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from rest_framework import permissions, viewsets
 from rest_framework.response import Response
+from rest_framework.decorators import action
 
 from apps.core.models import SalonSettings, WorkingHours
 from .models import TimeSlot, Booking
-from .serializers import TimeSlotSerializer, BookingSerializer
+from .serializers import TimeSlotSerializer, BookingSerializer, BookingCancelSerializer
 
 
 class TimeSlotViewSet(viewsets.ModelViewSet):
@@ -122,3 +123,24 @@ class BookingViewSet(viewsets.ModelViewSet):
 		if status:
 			queryset = queryset.filter(status=status)
 		return queryset
+	
+	@action(detail=True, methods=['post'])
+	def cancel(self, request, pk=None):
+		booking = self.get_object()
+
+		if booking.status != 'confirmed':
+			return Response(
+				{'detail': 'Only confirmed bookings can be cancelled.'},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+
+		serializer = BookingCancelSerializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+
+		booking.status = 'cancelled'
+		booking.cancellation_reason = serializer.validated_data['reason']
+		booking.cancellation_note = serializer.validated_data.get('note', '')
+		booking.cancelled_at = timezone.now()
+		booking.save(update_fields=['status', 'cancellation_reason', 'cancellation_note', 'cancelled_at', 'updated_at'])
+
+		return Response(BookingSerializer(booking, context={'request': request}).data)

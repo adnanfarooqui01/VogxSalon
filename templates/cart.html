@@ -389,7 +389,7 @@
                 </div>
 
                 <!-- Booking Details Form -->
-                <div>
+                <div id="bookingDetailsWrapper" style="display: none;">
                     <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-primary);">📝 Booking Details</h2>
                     <div style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-soft); padding: 1.5rem;">
                         
@@ -899,6 +899,7 @@
         function displayCart() {
             const cart = getCart();
             const container = document.getElementById('cartItemsContainer');
+            const bookingDetailsWrapper = document.getElementById('bookingDetailsWrapper');
 
             if (!cart || cart.length === 0) {
                 container.innerHTML = `
@@ -911,6 +912,9 @@
                         </button>
                     </div>
                 `;
+                if (bookingDetailsWrapper) {
+                    bookingDetailsWrapper.style.display = 'none';
+                }
                 updateOrderSummary([]);
                 return;
             }
@@ -1057,6 +1061,27 @@
          * Update order summary totals
          */
         function updateOrderSummary(cart) {
+            const bookingDetailsWrapper = document.getElementById('bookingDetailsWrapper');
+            const summarySubtotalEl = document.getElementById('summarySubtotal');
+            const chargeEl = document.getElementById('serviceCharge');
+            const convenienceFeeEl = document.getElementById('convenienceFee');
+            const summaryTotalEl = document.getElementById('summaryTotal');
+
+            if (!cart || cart.length === 0) {
+                if (bookingDetailsWrapper) {
+                    bookingDetailsWrapper.style.display = 'none';
+                }
+                if (summarySubtotalEl) summarySubtotalEl.textContent = '₹0.00';
+                if (chargeEl) chargeEl.textContent = '₹0.00';
+                if (convenienceFeeEl) convenienceFeeEl.textContent = '₹0.00';
+                if (summaryTotalEl) summaryTotalEl.textContent = '₹0.00';
+                return;
+            }
+
+            if (bookingDetailsWrapper) {
+                bookingDetailsWrapper.style.display = 'block';
+            }
+
             let totalItems = 0;
             let totalPrice = 0;
 
@@ -1071,17 +1096,9 @@
             const convenienceFee = 20;
             const finalTotal = totalPrice + serviceCharge + convenienceFee;
 
-            // Update elements safely with null checks
-            const summarySubtotalEl = document.getElementById('summarySubtotal');
             if (summarySubtotalEl) summarySubtotalEl.textContent = '₹' + totalPrice.toFixed(2);
-            
-            const chargeEl = document.getElementById('serviceCharge');
             if (chargeEl) chargeEl.textContent = '₹' + serviceCharge.toFixed(2);
-            
-            const convenienceFeeEl = document.getElementById('convenienceFee');
             if (convenienceFeeEl) convenienceFeeEl.textContent = '₹' + convenienceFee.toFixed(2);
-            
-            const summaryTotalEl = document.getElementById('summaryTotal');
             if (summaryTotalEl) summaryTotalEl.textContent = '₹' + finalTotal.toFixed(2);
         }
 

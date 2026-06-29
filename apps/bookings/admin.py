@@ -28,7 +28,7 @@ class BookingAdmin(admin.ModelAdmin):
             'fields': ('total_price', 'is_paid')
         }),
         ('Status', {
-            'fields': ('status', 'notes', 'completed_at')
+            'fields': ('status', 'notes', 'completed_at', 'cancellation_reason', 'cancellation_note', 'cancelled_at'),
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

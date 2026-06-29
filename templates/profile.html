@@ -38,6 +38,13 @@
         .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
         @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } }
+        .booking-status.completed { background: #e2e3ff; color: #4b3f99; }
+        .booking-status.cancelled { background: #f8d7da; color: #721c24; }
+        .cancel-modal-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .cancel-modal-overlay.active { display: flex; }
+        .cancel-modal { background: white; border-radius: 12px; padding: 2rem; width: 90%; max-width: 420px; }
+        .cancel-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .cancel-modal select, .cancel-modal textarea { width: 100%; padding: 0.6rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -130,6 +137,34 @@
         </div>
     </div>
 </div>
+<div id="cancelModalOverlay" class="cancel-modal-overlay">
+    <div class="cancel-modal">
+        <div class="cancel-modal-header">
+            <h3>Cancel Booking</h3>
+            <button class="cancel-modal-close" id="cancelModalClose" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">&times;</button>
+        </div>
+        <div class="form-group">
+            <label>Why are you cancelling?</label>
+            <select id="cancelReasonSelect">
+                <option value="">Select a reason</option>
+                <option value="change_of_plans">Change of plans</option>
+                <option value="booked_wrong_slot">Booked wrong date/time</option>
+                <option value="found_better_price">Found a better price elsewhere</option>
+                <option value="professional_unavailable">Professional/slot unavailable</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div class="form-group" id="cancelNoteGroup" style="display:none;">
+            <label>Please tell us more</label>
+            <textarea id="cancelNoteInput" rows="3" placeholder="What happened?"></textarea>
+        </div>
+        <div id="cancelModalError" class="alert error" style="display:none;"></div>
+        <div>
+            <button class="btn btn-danger" id="cancelConfirmBtn">Cancel Booking</button>
+            <button class="btn btn-secondary" id="cancelDismissBtn">Never mind</button>
+        </div>
+    </div>
+</div>
 
 <!-- FOOTER -->
 <footer style="margin-top: 4rem; background-color: var(--bg-dark); color: var(--text-on-dark); padding: 2rem; text-align: center;">
@@ -212,6 +247,7 @@ async function loadBookings() {
                     <p><strong>⏰ Time:</strong> ${booking.booking_time || 'N/A'}</p>
                     <p><strong>💰 Price:</strong> ₹${parseFloat(booking.total_price || 0).toFixed(2)}</p>
                 </div>
+                ${status === 'confirmed' ? `<button class="btn btn-danger" style="margin-top:0.75rem;" onclick="openCancelModal(${booking.id})">Cancel Booking</button>` : ''}
             `;
             list.appendChild(card);
         });
@@ -256,7 +292,78 @@ async function loadCurrentBookings() {
         document.getElementById('currentBookingsList').innerHTML = '<div class="empty-state"><p>Failed to load bookings</p></div>';
     }
 }
+let cancelBookingId = null;
 
+function openCancelModal(bookingId) {
+    cancelBookingId = bookingId;
+    document.getElementById('cancelReasonSelect').value = '';
+    document.getElementById('cancelNoteInput').value = '';
+    document.getElementById('cancelNoteGroup').style.display = 'none';
+    document.getElementById('cancelModalError').style.display = 'none';
+    document.getElementById('cancelModalOverlay').classList.add('active');
+}
+
+function closeCancelModal() {
+    document.getElementById('cancelModalOverlay').classList.remove('active');
+    cancelBookingId = null;
+}
+
+document.getElementById('cancelReasonSelect').addEventListener('change', (e) => {
+    document.getElementById('cancelNoteGroup').style.display = e.target.value === 'other' ? 'block' : 'none';
+});
+
+document.getElementById('cancelModalClose').addEventListener('click', closeCancelModal);
+document.getElementById('cancelDismissBtn').addEventListener('click', closeCancelModal);
+
+document.getElementById('cancelConfirmBtn').addEventListener('click', async () => {
+    const reason = document.getElementById('cancelReasonSelect').value;
+    const note = document.getElementById('cancelNoteInput').value.trim();
+    const errorDiv = document.getElementById('cancelModalError');
+    errorDiv.style.display = 'none';
+
+    if (!reason) {
+        errorDiv.textContent = 'Please select a reason';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    if (reason === 'other' && !note) {
+        errorDiv.textContent = 'Please tell us a bit more about why you are cancelling';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    const confirmBtn = document.getElementById('cancelConfirmBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Cancelling...';
+
+    try {
+        // ⚠️ Check this URL matches your router prefix for BookingViewSet
+        const response = await fetch(`/api/bookings/bookings/${cancelBookingId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Token ${API.token}`,
+                'X-CSRFToken': document.querySelector('[name=csrftoken]').getAttribute('content')
+            },
+            body: JSON.stringify({ reason, note })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.detail || Object.values(errData)[0] || 'Failed to cancel booking');
+        }
+
+        closeCancelModal();
+        loadBookings();
+        loadCurrentBookings();
+    } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Cancel Booking';
+    }
+});
 // Event listeners
 document.getElementById('saveBtn').addEventListener('click', async () => {
     const name = document.getElementById('name').value;

@@ -37,6 +37,9 @@ class BookingSerializer(serializers.ModelSerializer):
             'notes',
             'is_paid',
             'payment_status',
+            'cancellation_reason',
+            'cancellation_note',
+            'cancelled_at',
             'created_at',
             'updated_at',
             'completed_at',
@@ -52,6 +55,9 @@ class BookingSerializer(serializers.ModelSerializer):
             'status',
             'is_paid',
             'payment_status',
+            'cancellation_reason',
+            'cancellation_note',
+            'cancelled_at',
             'created_at',
             'updated_at',
             'completed_at',
@@ -74,5 +80,14 @@ class BookingSerializer(serializers.ModelSerializer):
             validated_data['total_price'] += 50  # Home visit charge
         validated_data['total_price'] += 20  # Convenience fee
         
-        validated_data.setdefault('status', 'pending')
+        validated_data.setdefault('status', 'confirmed')
         return super().create(validated_data)
+
+class BookingCancelSerializer(serializers.Serializer):
+    reason = serializers.ChoiceField(choices=Booking.CANCELLATION_REASON_CHOICES)
+    note = serializers.CharField(required=False, allow_blank=True, max_length=500)
+
+    def validate(self, data):
+        if data['reason'] == 'other' and not data.get('note', '').strip():
+            raise serializers.ValidationError({'note': 'Please tell us a bit more about why you are cancelling.'})
+        return data
