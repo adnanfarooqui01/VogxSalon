@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 
 from django.utils import timezone
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, viewsets, status
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.decorators import action 
 
 from apps.core.models import SalonSettings, WorkingHours
-from .models import TimeSlot, Booking
-from .serializers import TimeSlotSerializer, BookingSerializer, BookingCancelSerializer
+from .serializers import TimeSlotSerializer, BookingSerializer, BookingCancelSerializer, BookingGroupSerializer, BookingGroupCreateSerializer
+from .models import TimeSlot, Booking, BookingGroup
 
 
 class TimeSlotViewSet(viewsets.ModelViewSet):
@@ -144,3 +144,43 @@ class BookingViewSet(viewsets.ModelViewSet):
 		booking.save(update_fields=['status', 'cancellation_reason', 'cancellation_note', 'cancelled_at', 'updated_at'])
 
 		return Response(BookingSerializer(booking, context={'request': request}).data)
+	
+
+
+class BookingGroupViewSet(viewsets.ModelViewSet):
+    serializer_class = BookingGroupSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    ordering_fields = ['booking_date', 'created_at']
+
+    def get_queryset(self):
+        queryset = BookingGroup.objects.prefetch_related('bookings__service').select_related('user', 'payment').all().order_by('-created_at')
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(user=self.request.user)
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = BookingGroupCreateSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        group = serializer.save()
+        return Response(BookingGroupSerializer(group).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        group = self.get_object()
+        if group.status != 'confirmed':
+            return Response({'detail': 'Only confirmed bookings can be cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = BookingCancelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        group.status = 'cancelled'
+        group.cancellation_reason = serializer.validated_data['reason']
+        group.cancellation_note = serializer.validated_data.get('note', '')
+        group.cancelled_at = timezone.now()
+        group.save()
+        group.bookings.update(status='cancelled')
+
+        return Response(BookingGroupSerializer(group).data)

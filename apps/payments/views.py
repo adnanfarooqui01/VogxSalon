@@ -1,11 +1,15 @@
+
+
 from rest_framework import permissions, viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
 from datetime import datetime
+from decouple import config
+import uuid
 
-from apps.bookings.models import Booking
+from apps.bookings.models import Booking, BookingGroup
 from .models import Payment
 from .serializers import PaymentSerializer, CreateOrderSerializer, VerifyPaymentSerializer
 from .razorpay_utils import create_razorpay_order, verify_razorpay_signature, fetch_payment_details
@@ -68,9 +72,9 @@ def create_payment_order(request):
 			status=status.HTTP_404_NOT_FOUND
 		)
 	
-	if booking.status not in ['pending', 'confirmed']:
+	if booking.status != 'confirmed':
 		return Response(
-			{'detail': 'Booking must be in pending or confirmed status for payment'},
+			{'detail': 'Booking must be in confirmed status for payment'},
 			status=status.HTTP_400_BAD_REQUEST
 		)
 	
@@ -83,6 +87,7 @@ def create_payment_order(request):
 		)
 	
 	# Create or update Payment record
+	# Create or update Payment record
 	if existing_payment:
 		payment = existing_payment
 	else:
@@ -90,7 +95,8 @@ def create_payment_order(request):
 			booking=booking,
 			amount=booking.total_price,
 			status='pending',
-			payment_method='razorpay'
+			payment_method='razorpay',
+			transaction_id=f"TXN-{uuid.uuid4().hex[:12].upper()}"
 		)
 	
 	# Create Razorpay order
@@ -118,9 +124,9 @@ def create_payment_order(request):
 	
 	return Response({
 		'order_id': razorpay_order['id'],
-		'amount': razorpay_order['amount'] / 100,  # Convert back to rupees
+		'amount': razorpay_order['amount'] / 100,
 		'currency': razorpay_order['currency'],
-		'key': 'RAZORPAY_KEY_ID',  # Frontend will fetch from settings
+		'key': config('RAZORPAY_KEY_ID'),
 		'transaction_id': payment.transaction_id,
 		'payment_id': payment.id,
 	}, status=status.HTTP_201_CREATED)
@@ -184,7 +190,7 @@ def verify_payment_order(request):
 		
 		# Update booking status
 		booking = payment.booking
-		booking.status = 'payment_confirmed'
+		booking.status = 'confirmed'
 		booking.is_paid = True
 		booking.updated_at = timezone.now()
 		booking.save()
@@ -199,38 +205,114 @@ def verify_payment_order(request):
 	}, status=status.HTTP_200_OK)
 
 
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def create_combined_order(request):
+    group_id = request.data.get('group_id')
+    try:
+        group = BookingGroup.objects.get(id=group_id, user=request.user, status='confirmed', is_paid=False)
+    except BookingGroup.DoesNotExist:
+        return Response({'detail': 'Invalid or already-paid booking group'}, status=status.HTTP_400_BAD_REQUEST)
+
+    payment, _ = Payment.objects.get_or_create(
+        booking_group=group,
+        defaults={'amount': group.total_price, 'status': 'pending', 'payment_method': 'razorpay',
+                  'transaction_id': f"TXN-{uuid.uuid4().hex[:20].upper()}"}
+    )
+
+    razorpay_order = create_razorpay_order(
+        amount=float(group.total_price),
+        receipt=payment.transaction_id,
+        notes={'group_id': group.id, 'customer': request.user.name}
+    )
+    if not razorpay_order:
+        return Response({'detail': 'Failed to create Razorpay order'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    payment.razorpay_order_id = razorpay_order['id']
+    payment.status = 'initiated'
+    payment.save()
+
+    return Response({
+        'order_id': razorpay_order['id'],
+        'amount': razorpay_order['amount'] / 100,
+        'currency': razorpay_order['currency'],
+        'key': config('RAZORPAY_KEY_ID'),
+        'group_id': group.id,
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def verify_combined_payment(request):
+    serializer = VerifyPaymentSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    razorpay_order_id = serializer.validated_data['razorpay_order_id']
+    razorpay_payment_id = serializer.validated_data['razorpay_payment_id']
+    razorpay_signature = serializer.validated_data['razorpay_signature']
+
+    if not verify_razorpay_signature(razorpay_order_id, razorpay_payment_id, razorpay_signature):
+        return Response({'detail': 'Invalid payment signature'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        payment = Payment.objects.get(razorpay_order_id=razorpay_order_id, booking_group__user=request.user)
+    except Payment.DoesNotExist:
+        return Response({'detail': 'Payment record not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    with transaction.atomic():
+        payment.razorpay_payment_id = razorpay_payment_id
+        payment.razorpay_signature = razorpay_signature
+        payment.status = 'completed'
+        payment.paid_at = timezone.now()
+        payment.save()
+
+        group = payment.booking_group
+        group.is_paid = True
+        group.save(update_fields=['is_paid', 'updated_at'])
+
+    return Response({'status': 'completed', 'group_id': payment.booking_group.id})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def confirm_pay_later(request):
+    group_id = request.data.get('group_id')
+    group = BookingGroup.objects.filter(id=group_id, user=request.user, status='confirmed').first()
+    if not group:
+        return Response({'detail': 'Invalid booking group'}, status=status.HTTP_400_BAD_REQUEST)
+
+    Payment.objects.get_or_create(
+        booking_group=group,
+        defaults={'amount': group.total_price, 'status': 'pending', 'payment_method': 'pay_later',
+                  'transaction_id': f"TXN-{uuid.uuid4().hex[:20].upper()}"}
+    )
+    return Response({'status': 'ok', 'group_id': group.id})
+
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def payment_history(request):
-	"""
-	Get payment history for current user
-	
-	Query parameters:
-	    - status: Filter by payment status (pending, initiated, completed, failed, refunded)
-	    - page: Page number (default: 1)
-	    - page_size: Number of items per page (default: 20)
-	
-	Response: Paginated list of payments
-	"""
-	from rest_framework.pagination import PageNumberPagination
-	
-	# Get user's payments
-	if request.user.is_staff:
-		payments = Payment.objects.all().order_by('-created_at')
-	else:
-		payments = Payment.objects.filter(booking__user=request.user).order_by('-created_at')
-	
-	# Filter by status if provided
-	status_param = request.query_params.get('status')
-	if status_param:
-		payments = payments.filter(status=status_param)
-	
-	# Paginate
-	paginator = PageNumberPagination()
-	paginator.page_size = int(request.query_params.get('page_size', 20))
-	paginated_payments = paginator.paginate_queryset(payments, request)
-	
-	serializer = PaymentSerializer(paginated_payments, many=True)
-	
-	return paginator.get_paginated_response(serializer.data)
+    from rest_framework.pagination import PageNumberPagination
 
+    if request.user.is_staff:
+        payments = Payment.objects.all().order_by('-created_at')
+    else:
+        payments = Payment.objects.filter(
+            booking__user=request.user
+        ).order_by('-created_at')
+
+    paginator = PageNumberPagination()
+    paginator.page_size = int(request.query_params.get('page_size', 20))
+
+    paginated_payments = paginator.paginate_queryset(
+        payments,
+        request
+    )
+
+    serializer = PaymentSerializer(
+        paginated_payments,
+        many=True
+    )
+
+    return paginator.get_paginated_response(
+        serializer.data
+    )

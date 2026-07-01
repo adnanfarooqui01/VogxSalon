@@ -16,8 +16,8 @@ class CreateOrderSerializer(serializers.Serializer):
     def validate_booking_id(self, value):
         try:
             booking = Booking.objects.get(id=value)
-            if booking.status not in ['pending', 'confirmed']:
-                raise serializers.ValidationError("Booking must be in pending or confirmed status")
+            if booking.status != 'confirmed':
+                raise serializers.ValidationError("Booking must be in confirmed status")
         except Booking.DoesNotExist:
             raise serializers.ValidationError("Booking not found")
         return value
@@ -31,18 +31,16 @@ class VerifyPaymentSerializer(serializers.Serializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    booking_reference = serializers.CharField(source='booking.id', read_only=True)
-    booking_customer = serializers.CharField(source='booking.user.name', read_only=True)
-    booking_service = serializers.CharField(source='booking.service.name', read_only=True)
+    booking_reference = serializers.CharField(source='booking_group.id', read_only=True)
+    booking_customer = serializers.CharField(source='booking_group.user.name', read_only=True)
 
     class Meta:
         model = Payment
         fields = [
             'id',
-            'booking',
+            'booking_group',
             'booking_reference',
             'booking_customer',
-            'booking_service',
             'amount',
             'status',
             'payment_method',
@@ -59,7 +57,6 @@ class PaymentSerializer(serializers.ModelSerializer):
             'id',
             'booking_reference',
             'booking_customer',
-            'booking_service',
             'amount',
             'transaction_id',
             'created_at',
@@ -68,7 +65,7 @@ class PaymentSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        booking = validated_data['booking']
-        validated_data['amount'] = booking.total_price
+        group = validated_data['booking_group']
+        validated_data['amount'] = group.total_price
         validated_data.setdefault('transaction_id', f"TXN-{uuid.uuid4().hex[:20].upper()}")
         return super().create(validated_data)

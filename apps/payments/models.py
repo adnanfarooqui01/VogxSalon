@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.validators import MinValueValidator
-from apps.bookings.models import Booking
 
 
 class Payment(models.Model):
@@ -20,9 +19,9 @@ class Payment(models.Model):
         ('card', 'Credit/Debit Card'),
         ('netbanking', 'Net Banking'),
         ('wallet', 'Wallet'),
+        ('pay_later', 'Pay After Service'),
     ]
-    
-    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='payment')
+    booking_group = models.OneToOneField('bookings.BookingGroup', on_delete=models.CASCADE, related_name='payment', null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, blank=True)
@@ -41,4 +40,4 @@ class Payment(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Payment #{self.id} - {self.booking.user.name} (${self.amount})"
+        return f"Payment #{self.id} - {self.booking_group.user.name} (${self.amount})"

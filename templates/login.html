@@ -431,13 +431,18 @@
             }
             formattedPhone = '+' + formattedPhone;
 
-            // Create reCAPTCHA verifier
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                'size': 'invisible',
-                'callback': (response) => {
-                    console.log('reCAPTCHA verified');
-                }
-            });
+            // Create reCAPTCHA only once
+            if (!window.recaptchaVerifier) {
+                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+                    'recaptcha-container',
+                    {
+                        size: 'invisible',
+                        callback: (response) => {
+                            console.log('reCAPTCHA verified');
+                        }
+                    }
+                );
+            }
 
             // Send OTP via Firebase
             confirmationResult = await auth.signInWithPhoneNumber(formattedPhone, window.recaptchaVerifier);

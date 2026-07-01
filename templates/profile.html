@@ -223,31 +223,48 @@ async function loadProfile() {
 // Load bookings
 async function loadBookings() {
     try {
-        const response = await API.getBookings(1);
+        const response = await fetch('/api/bookings/booking-groups/?page=1', {
+            headers: { 'Authorization': `Token ${API.token}` }
+        });
+        const data = await response.json();
         const list = document.getElementById('bookingsList');
         list.innerHTML = '';
-        
-        if (!response.results || response.results.length === 0) {
+
+        const groups = (data.results || data).filter(group =>
+            ['cancelled', 'completed'].includes((group.status || '').toLowerCase())
+        );
+        if (!groups || groups.length === 0) {
             list.innerHTML = `<div class="empty-state"><h3>No Bookings Yet</h3><p>You haven't made any bookings yet.</p></div>`;
             return;
         }
-        
-        response.results.forEach(booking => {
+
+        groups.forEach(group => {
             const card = document.createElement('div');
             card.className = 'booking-card';
-            const date = new Date(booking.booking_date).toLocaleDateString();
-            const status = booking.status || 'pending';
+            const date = new Date(group.booking_date).toLocaleDateString();
+            const status = group.status || 'confirmed';
+
+            const servicesHtml = group.bookings.map(b =>
+                `<li>${b.service_name} — ₹${parseFloat(b.price).toFixed(2)}</li>`
+            ).join('');
+
             card.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                    <div><strong>${booking.service_name || 'Service'}</strong></div>
+                    <div><strong>Order #${group.id}</strong> (${group.bookings.length} service${group.bookings.length > 1 ? 's' : ''})</div>
                     <span class="booking-status ${status}">${status.toUpperCase()}</span>
                 </div>
+                <ul style="margin: 0 0 1rem 1.2rem; padding: 0; color: var(--text-secondary);">${servicesHtml}</ul>
                 <div>
                     <p><strong>📅 Date:</strong> ${date}</p>
-                    <p><strong>⏰ Time:</strong> ${booking.booking_time || 'N/A'}</p>
-                    <p><strong>💰 Price:</strong> ₹${parseFloat(booking.total_price || 0).toFixed(2)}</p>
+                    <p><strong>⏰ Time:</strong> ${group.booking_time || 'N/A'}</p>
+                    <p style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-soft);">
+                        Subtotal: ₹${parseFloat(group.subtotal).toFixed(2)} +
+                        Service: ₹${parseFloat(group.service_charge).toFixed(2)} +
+                        Convenience: ₹${parseFloat(group.convenience_fee).toFixed(2)}
+                    </p>
+                    <p><strong>💰 Total:</strong> ₹${parseFloat(group.total_price).toFixed(2)}</p>
                 </div>
-                ${status === 'confirmed' ? `<button class="btn btn-danger" style="margin-top:0.75rem;" onclick="openCancelModal(${booking.id})">Cancel Booking</button>` : ''}
+                ${status === 'confirmed' ? `<button class="btn btn-danger" style="margin-top:0.75rem;" onclick="openCancelModal(${group.id})">Cancel Booking</button>` : ''}
             `;
             list.appendChild(card);
         });
@@ -256,42 +273,88 @@ async function loadBookings() {
         document.getElementById('bookingsList').innerHTML = '<div class="empty-state"><p>Failed to load bookings</p></div>';
     }
 }
-
 // Load current bookings
 async function loadCurrentBookings() {
     try {
-        const response = await API.getBookings(1, 'confirmed');
-        const list = document.getElementById('currentBookingsList');
-        list.innerHTML = '';
-        
-        if (!response.results || response.results.length === 0) {
-            list.innerHTML = `<div class="empty-state"><h3>No Current Bookings</h3><p>You don't have any active bookings right now.</p></div>`;
-            return;
-        }
-        
-        response.results.forEach(booking => {
-            const card = document.createElement('div');
-            card.className = 'booking-card';
-            const date = new Date(booking.booking_date).toLocaleDateString();
-            card.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                    <div><strong>${booking.service_name || 'Service'}</strong></div>
-                    <span class="booking-status confirmed">CONFIRMED</span>
-                </div>
-                <div>
-                    <p><strong>📅 Date:</strong> ${date}</p>
-                    <p><strong>⏰ Time:</strong> ${booking.booking_time || 'N/A'}</p>
-                    <p><strong>👨‍💼 Professional:</strong> ${booking.professional_name || 'TBD'}</p>
-                    <p><strong>📍 Location:</strong> ${booking.service_type === 'home' ? '🏠 Home' : '🏬 Salon'}</p>
+        const response = await fetch('/api/bookings/booking-groups/?page=1&status=confirmed', {
+            headers: {
+                'Authorization': `Token ${API.token}`
+            }
+        });
+
+        const data = await response.json();
+        const currentBookingsList = document.getElementById('currentBookingsList');
+
+        currentBookingsList.innerHTML = '';
+
+        const groups = data.results || data;
+
+        if (!groups || groups.length === 0) {
+            currentBookingsList.innerHTML = `
+                <div class="empty-state">
+                    <h3>No Current Bookings</h3>
+                    <p>You don't have any active bookings.</p>
                 </div>
             `;
-            list.appendChild(card);
+            return;
+        }
+
+        groups.forEach(group => {
+            const card = document.createElement('div');
+            card.className = 'booking-card';
+
+            const date = new Date(group.booking_date).toLocaleDateString();
+
+            const servicesHtml = group.bookings.map(booking => `
+                <li>
+                    ${booking.service_name}
+                    - ₹${parseFloat(booking.price).toFixed(2)}
+                </li>
+            `).join('');
+
+            card.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                    <div>
+                        <strong>Order #${group.id}</strong>
+                    </div>
+                    <span class="booking-status confirmed">
+                        CONFIRMED
+                    </span>
+                </div>
+
+                <ul style="margin:0 0 1rem 1.2rem;padding:0;">
+                    ${servicesHtml}
+                </ul>
+
+                <p><strong>📅 Date:</strong> ${date}</p>
+                <p><strong>⏰ Time:</strong> ${group.booking_time || 'N/A'}</p>
+
+                <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #eee;">
+                    <p><strong>💰 Total:</strong> ₹${parseFloat(group.total_price).toFixed(2)}</p>
+                </div>
+
+                <button
+                    class="btn btn-danger"
+                    style="margin-top:1rem;"
+                    onclick="openCancelModal(${group.id})">
+                    Cancel Booking
+                </button>
+            `;
+
+            currentBookingsList.appendChild(card);
         });
+
     } catch (error) {
         console.error('Error loading current bookings:', error);
-        document.getElementById('currentBookingsList').innerHTML = '<div class="empty-state"><p>Failed to load bookings</p></div>';
+
+        document.getElementById('currentBookingsList').innerHTML = `
+            <div class="empty-state">
+                <p>Failed to load current bookings</p>
+            </div>
+        `;
     }
 }
+
 let cancelBookingId = null;
 
 function openCancelModal(bookingId) {
@@ -338,7 +401,7 @@ document.getElementById('cancelConfirmBtn').addEventListener('click', async () =
 
     try {
         // ⚠️ Check this URL matches your router prefix for BookingViewSet
-        const response = await fetch(`/api/bookings/bookings/${cancelBookingId}/cancel/`, {
+        const response = await fetch(`/api/bookings/booking-groups/${cancelBookingId}/cancel/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

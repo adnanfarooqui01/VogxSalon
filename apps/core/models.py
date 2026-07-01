@@ -84,3 +84,19 @@ class SalonSettings(models.Model):
     
     def __str__(self):
         return 'Salon Settings'
+
+
+class ServiceablePincode(models.Model):
+    pincode = models.CharField(max_length=6, unique=True)
+    city = models.CharField(max_length=100)
+    area_name = models.CharField(max_length=100)
+    delivery_charge = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Serviceable Pincode'
+        verbose_name_plural = 'Serviceable Pincodes'
+        ordering = ['pincode']
+
+    def __str__(self):
+        return f"{self.pincode} - {self.area_name}, {self.city}"

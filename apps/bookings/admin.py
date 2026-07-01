@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import TimeSlot, Booking
+from .models import BookingGroup, TimeSlot, Booking
 
 @admin.register(TimeSlot)
 class TimeSlotAdmin(admin.ModelAdmin):
@@ -34,4 +34,27 @@ class BookingAdmin(admin.ModelAdmin):
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
+    )
+
+class BookingInline(admin.TabularInline):
+    model = Booking
+    extra = 0
+    fields = ('service', 'total_price', 'status')
+    readonly_fields = ('service', 'total_price', 'status')
+    can_delete = False
+
+@admin.register(BookingGroup)
+class BookingGroupAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'booking_date', 'booking_time', 'status', 'booking_type', 'is_paid', 'total_price')
+    search_fields = ('user__phone', 'user__name', 'id')
+    list_filter = ('status', 'booking_type', 'is_paid', 'booking_date')
+    list_editable = ('status', 'is_paid')
+    readonly_fields = ('created_at', 'updated_at')
+    inlines = [BookingInline]
+    fieldsets = (
+        ('Order Details', {'fields': ('user', 'booking_date', 'booking_time', 'booking_type')}),
+        ('Home Visit Address', {'fields': ('pincode', 'house_number', 'street_area', 'landmark'), 'classes': ('collapse',)}),
+        ('Billing', {'fields': ('subtotal', 'service_charge', 'convenience_fee', 'total_price', 'is_paid')}),
+        ('Status', {'fields': ('status', 'notes', 'cancellation_reason', 'cancellation_note', 'cancelled_at')}),
+        ('Timestamps', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
     )

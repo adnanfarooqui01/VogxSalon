@@ -7,6 +7,7 @@
     <title>{% block title %}VogxSalon - Book Your Beauty Services{% endblock %}</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         :root {
             --brand-primary: #ff6b9d;
@@ -421,6 +422,7 @@
                                 <div>
                                     <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Pincode</label>
                                     <input type="text" id="bookingPincode" placeholder="Enter pincode" maxlength="10" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                                    <div id="pincodeStatus" style="margin-top: 0.5rem; font-size: 0.9rem;"></div>
                                 </div>
                                 <div>
                                     <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">House / Flat No.</label>
@@ -587,15 +589,19 @@
                     },
 
                     async getWorkingHours(day) {
-                        return this.request(`/core/working-hours/?day=${day}`);
+                        return this.request(`/working-hours/?day=${day}`);
                     },
 
                     async getSalonSettings() {
-                        return this.request('/core/salon-settings/');
+                        return this.request('/salon-settings/');
                     },
 
                     async getTimeSlots(serviceId, date) {
                         return this.request(`/bookings/time-slots/?service=${serviceId}&date=${date}&is_available=true`);
+                    },
+
+                    async checkPincode(pincode) {
+                        return this.request(`/check-pincode/?pincode=${encodeURIComponent(pincode)}`);
                     },
 
                     async createBooking(bookingData) {
@@ -883,6 +889,7 @@
             updateNavbarAuthState();
             updateCartBadge();
             setupGenderToggle();
+            setupPincodeValidation();
         });
 
         // Close popup when clicking outside
@@ -962,11 +969,69 @@
             updateOrderSummary(getCart());
         }
 
+        let pincodeCheckTimeout = null;
+
+        function setPincodeStatus(message, success = false) {
+            const statusEl = document.getElementById('pincodeStatus');
+            const confirmBtn = document.getElementById('confirmBtn');
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.style.color = success ? 'green' : 'red';
+            }
+            if (confirmBtn) {
+                confirmBtn.disabled = !success && document.querySelector('input[name="serviceType"]:checked')?.value === 'home';
+            }
+        }
+
+        async function validatePincodeServiceability() {
+            const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || 'home';
+            const pincode = document.getElementById('bookingPincode')?.value.trim();
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            if (serviceType !== 'home') {
+                if (confirmBtn) confirmBtn.disabled = false;
+                setPincodeStatus('', true);
+                return;
+            }
+
+            if (!pincode || pincode.length < 6) {
+                setPincodeStatus('Enter a valid 6-digit pincode.', false);
+                return;
+            }
+
+            try {
+                const apiInstance = await initializeAPI();
+                const result = await apiInstance.checkPincode(pincode);
+                if (result.serviceable) {
+                    setPincodeStatus(`✓ We deliver here — delivery charge ₹${parseFloat(result.delivery_charge).toFixed(2)}.`, true);
+                } else {
+                    setPincodeStatus("Sorry, we don't currently service this pincode.", false);
+                }
+            } catch (error) {
+                setPincodeStatus('Unable to verify pincode right now.', false);
+                console.error('Pincode check error:', error);
+            }
+        }
+
+        function schedulePincodeValidation() {
+            clearTimeout(pincodeCheckTimeout);
+            pincodeCheckTimeout = setTimeout(validatePincodeServiceability, 500);
+        }
+
         function handleServiceTypeChange() {
             updateServiceCharge();
             const bookingDate = document.getElementById('bookingDate');
             if (bookingDate && bookingDate.value) {
                 loadAvailableTimeSlots(bookingDate.value);
+            }
+            schedulePincodeValidation();
+            schedulePincodeValidation();
+        }
+
+        function setupPincodeValidation() {
+            const pincodeInput = document.getElementById('bookingPincode');
+            if (pincodeInput) {
+                pincodeInput.addEventListener('input', schedulePincodeValidation);
             }
         }
 
@@ -1136,7 +1201,144 @@
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         }
+        
 
+        /**
+         * Trigger Razorpay checkout for a single booking
+         */
+        async function payForBooking(booking) {
+            const apiInstance = await initializeAPI();
+            const orderResp = await apiInstance.request('/payments/create-order/', 'POST', { booking_id: booking.id });
+
+            return new Promise((resolve, reject) => {
+                const options = {
+                    key: orderResp.key,
+                    amount: orderResp.amount * 100,
+                    currency: orderResp.currency,
+                    order_id: orderResp.order_id,
+                    name: 'VOGX Salon',
+                    description: `Payment for booking #${booking.id}`,
+                    handler: async function (response) {
+                        try {
+                            await apiInstance.request('/payments/verify-payment/', 'POST', {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                            });
+                            resolve(true);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    },
+                    prefill: {
+                        name: document.getElementById('bookingName').value.trim(),
+                        contact: document.getElementById('bookingPhone').value.trim(),
+                    },
+                    theme: { color: '#ff6b9d' },
+                    modal: {
+                        ondismiss: function () { reject(new Error('Payment cancelled')); }
+                    }
+                };
+                const rzp = new Razorpay(options);
+                rzp.open();
+            });
+        }
+        /**
+         * Show payment method choice modal, resolve once user completes a flow
+         */
+       function showPaymentMethodModal(group) {
+            return new Promise((resolve) => {
+                document.getElementById('paymentModalTotal').textContent = '₹' + parseFloat(group.total_price).toFixed(2);
+                document.getElementById('paymentModalError').style.display = 'none';
+                document.getElementById('paymentMethodOverlay').classList.add('active');
+
+                const cleanup = () => {
+                    document.getElementById('paymentMethodOverlay').classList.remove('active');
+                };
+
+                document.getElementById('payOnlineBtn').onclick = async () => {
+                    const onlineBtn = document.getElementById('payOnlineBtn');
+                    onlineBtn.disabled = true;
+                    onlineBtn.textContent = 'Opening payment...';
+                    try {
+                        await payForGroupCombined(group);
+                        cleanup();
+                        showBookingConfirmedModal(group, 'online');
+                        resolve();
+                    } catch (err) {
+                        document.getElementById('paymentModalError').textContent = err.message || 'Payment failed';
+                        document.getElementById('paymentModalError').style.display = 'block';
+                    } finally {
+                        onlineBtn.disabled = false;
+                        onlineBtn.textContent = '💳 Pay Online Now';
+                    }
+                };
+
+                document.getElementById('payLaterBtn').onclick = async () => {
+                    const laterBtn = document.getElementById('payLaterBtn');
+                    laterBtn.disabled = true;
+                    laterBtn.textContent = 'Confirming...';
+                    try {
+                        const apiInstance = await initializeAPI();
+                        await apiInstance.request('/payments/confirm-pay-later/', 'POST', {
+                            group_id: group.id
+                        });
+                        cleanup();
+                        showBookingConfirmedModal(group, 'pay_later');
+                        resolve();
+                    } catch (err) {
+                        document.getElementById('paymentModalError').textContent = err.message || 'Something went wrong';
+                        document.getElementById('paymentModalError').style.display = 'block';
+                        laterBtn.disabled = false;
+                        laterBtn.textContent = '🕐 Pay After Service';
+                    }
+                };
+            });
+        }
+
+                
+
+        /**
+         * Create one combined Razorpay order covering all bookings, open checkout once
+         */
+        async function payForGroupCombined(group) {
+            const apiInstance = await initializeAPI();
+            const orderResp = await apiInstance.request('/payments/create-combined-order/', 'POST', {
+                group_id: group.id
+            });
+
+            return new Promise((resolve, reject) => {
+                const options = {
+                    key: orderResp.key,
+                    amount: orderResp.amount * 100,
+                    currency: orderResp.currency,
+                    order_id: orderResp.order_id,
+                    name: 'VOGX Salon',
+                    description: `Payment for ${group.bookings.length} service(s)`,
+                    handler: async function (response) {
+                        try {
+                            await apiInstance.request('/payments/verify-combined-payment/', 'POST', {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                            });
+                            resolve(true);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    },
+                    prefill: {
+                        name: document.getElementById('bookingName').value.trim(),
+                        contact: document.getElementById('bookingPhone').value.trim(),
+                    },
+                    theme: { color: '#ff6b9d' },
+                    modal: {
+                        ondismiss: function () { reject(new Error('Payment cancelled')); }
+                    }
+                };
+                new Razorpay(options).open();
+            });
+        }
         /**
          * Confirm booking
          */
@@ -1200,30 +1402,29 @@
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = 'Processing...';
 
-                const item = cart[0];
-                const bookingData = {
-                    service: item.id,
+                const groupPayload = {
+                    service_ids: cart.map(item => item.id),
                     booking_date: bookingDate,
                     booking_time: bookingTime.includes(':') && bookingTime.split(':').length === 2 ? `${bookingTime}:00` : bookingTime,
                     booking_type: serviceType,
                     notes: notes,
                 };
-
                 if (serviceType === 'home') {
-                    bookingData.pincode = pincode;
-                    bookingData.house_number = houseNumber;
-                    bookingData.street_area = streetArea;
-                    if (landmark) bookingData.landmark = landmark;
+                    groupPayload.pincode = pincode;
+                    groupPayload.house_number = houseNumber;
+                    groupPayload.street_area = streetArea;
+                    if (landmark) groupPayload.landmark = landmark;
                 }
 
-                const result = await apiInstance.createBooking(bookingData);
+                const group = await apiInstance.request('/bookings/booking-groups/', 'POST', groupPayload);
 
                 localStorage.removeItem('vogx_cart');
                 updateCartBadge();
 
-                alert(`✓ Booking confirmed! Reference ID: ${result.id}`);
-                window.location.href = '/bookings';
+                confirmBtn.textContent = '✓ Confirm Booking';
+                confirmBtn.disabled = false;
 
+                await showPaymentMethodModal(group);
             } catch (error) {
                 console.error('Error:', error);
                 alert('Failed to confirm booking: ' + error.message);
@@ -1242,5 +1443,16 @@
         });
     </script>
     {% block extra_js %}{% endblock %}
+<div id="paymentMethodOverlay" class="login-popup-overlay">
+    <div class="login-popup">
+        <div class="login-popup-header">
+            <h2 class="login-popup-title">Choose Payment Method</h2>
+        </div>
+        <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Total amount: <strong id="paymentModalTotal">₹0.00</strong></p>
+        <button class="login-btn" id="payOnlineBtn" style="margin-bottom: 0.75rem;">💳 Pay Online Now</button>
+        <button class="login-btn" id="payLaterBtn" style="background: var(--text-muted);">🕐 Pay After Service</button>
+        <div id="paymentModalError" class="login-error" style="margin-top: 1rem;"></div>
+    </div>
+</div>
 </body>
 </html>

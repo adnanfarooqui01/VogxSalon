@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from apps.core.models import ServiceablePincode
 from apps.services.models import Service
-from .models import TimeSlot, Booking
+from django.db import transaction 
+from .models import TimeSlot, Booking, BookingGroup
 
 class TimeSlotSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source='service.name', read_only=True)
@@ -67,6 +69,24 @@ class BookingSerializer(serializers.ModelSerializer):
         payment = getattr(obj, 'payment', None)
         return payment.status if payment else None
 
+    def validate(self, attrs):
+        booking_type = attrs.get('booking_type')
+        pincode = attrs.get('pincode')
+
+        if self.instance is not None:
+            booking_type = booking_type or self.instance.booking_type
+            pincode = pincode or self.instance.pincode
+
+        if booking_type == 'home':
+            if not pincode:
+                raise serializers.ValidationError({'pincode': 'Please provide a pincode for home service.'})
+
+            serviceable = ServiceablePincode.objects.filter(pincode=pincode, is_active=True).first()
+            if not serviceable:
+                raise serializers.ValidationError({'pincode': "Sorry, we don't currently service this pincode yet."})
+
+        return attrs
+
     def create(self, validated_data):
         request = self.context.get('request')
         service = validated_data['service']
@@ -77,7 +97,10 @@ class BookingSerializer(serializers.ModelSerializer):
         # Usually backend should re-calculate for security
         validated_data['total_price'] = service.price
         if validated_data.get('booking_type') == 'home':
-            validated_data['total_price'] += 50  # Home visit charge
+            pincode = validated_data.get('pincode')
+            serviceable = ServiceablePincode.objects.filter(pincode=pincode, is_active=True).first()
+            delivery_charge = serviceable.delivery_charge if serviceable else 0
+            validated_data['total_price'] += delivery_charge
         validated_data['total_price'] += 20  # Convenience fee
         
         validated_data.setdefault('status', 'confirmed')
@@ -91,3 +114,112 @@ class BookingCancelSerializer(serializers.Serializer):
         if data['reason'] == 'other' and not data.get('note', '').strip():
             raise serializers.ValidationError({'note': 'Please tell us a bit more about why you are cancelling.'})
         return data
+    
+
+
+class BookingGroupCreateSerializer(serializers.Serializer):
+    service_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
+    booking_date = serializers.DateField()
+    booking_time = serializers.TimeField()
+    booking_type = serializers.ChoiceField(choices=Booking.BOOKING_TYPE_CHOICES)
+    pincode = serializers.CharField(required=False, allow_blank=True)
+    house_number = serializers.CharField(required=False, allow_blank=True)
+    street_area = serializers.CharField(required=False, allow_blank=True)
+    landmark = serializers.CharField(required=False, allow_blank=True)
+    notes = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        if attrs['booking_type'] == 'home':
+            pincode = attrs.get('pincode')
+            if not pincode:
+                raise serializers.ValidationError({'pincode': 'Please provide a pincode for home service.'})
+            serviceable = ServiceablePincode.objects.filter(pincode=pincode, is_active=True).first()
+            if not serviceable:
+                raise serializers.ValidationError({'pincode': "Sorry, we don't currently service this pincode yet."})
+        return attrs
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        service_ids = validated_data.pop('service_ids')
+        services = list(Service.objects.filter(id__in=service_ids))
+        if len(services) != len(service_ids):
+            raise serializers.ValidationError({'service_ids': 'One or more services not found.'})
+
+        subtotal = sum(s.price for s in services)
+        service_charge = 0
+        if validated_data['booking_type'] == 'home':
+            serviceable = ServiceablePincode.objects.filter(pincode=validated_data.get('pincode'), is_active=True).first()
+            service_charge = serviceable.delivery_charge if serviceable else 0
+        convenience_fee = 20
+        total_price = subtotal + service_charge + convenience_fee
+
+        with transaction.atomic():
+            group = BookingGroup.objects.create(
+                user=request.user,
+                booking_date=validated_data['booking_date'],
+                booking_time=validated_data['booking_time'],
+                booking_type=validated_data['booking_type'],
+                pincode=validated_data.get('pincode'),
+                house_number=validated_data.get('house_number'),
+                street_area=validated_data.get('street_area'),
+                landmark=validated_data.get('landmark'),
+                notes=validated_data.get('notes', ''),
+                subtotal=subtotal,
+                service_charge=service_charge,
+                convenience_fee=convenience_fee,
+                total_price=total_price,
+                status='confirmed',
+            )
+
+            for service in services:
+                Booking.objects.create(
+                    group=group,
+                    user=request.user,
+                    service=service,
+                    booking_date=validated_data['booking_date'],
+                    booking_time=validated_data['booking_time'],
+                    duration_minutes=service.duration_minutes,
+                    total_price=service.price,
+                    booking_type=validated_data['booking_type'],
+                    pincode=validated_data.get('pincode'),
+                    house_number=validated_data.get('house_number'),
+                    street_area=validated_data.get('street_area'),
+                    landmark=validated_data.get('landmark'),
+                    notes=validated_data.get('notes', ''),
+                    status='confirmed',
+                )
+
+        return group
+
+
+class BookingGroupSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.name', read_only=True)
+    bookings = serializers.SerializerMethodField()
+    payment_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BookingGroup
+        fields = [
+            'id', 'user', 'user_name', 'booking_date', 'booking_time', 'booking_type',
+            'pincode', 'house_number', 'street_area', 'landmark', 'notes',
+            'subtotal', 'service_charge', 'convenience_fee', 'total_price',
+            'status', 'is_paid', 'payment_status', 'bookings',
+            'cancellation_reason', 'cancellation_note', 'cancelled_at',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = fields
+
+    def get_bookings(self, obj):
+        return [
+            {
+                'id': b.id,
+                'service_id': b.service.id,
+                'service_name': b.service.name,
+                'price': b.total_price,
+            }
+            for b in obj.bookings.select_related('service').all()
+        ]
+
+    def get_payment_status(self, obj):
+        payment = getattr(obj, 'payment', None)
+        return payment.status if payment else None

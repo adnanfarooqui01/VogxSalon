@@ -140,7 +140,10 @@ def verify_firebase_id_token(id_token):
             initialize_firebase()
 
         # Verify the token using Firebase Admin SDK
-        claims = auth.verify_id_token(id_token)
+        claims = auth.verify_id_token(
+            id_token,
+            clock_skew_seconds=60
+        )
 
         logger.info(f"✓ Token verified for Firebase UID: {claims.get('uid')}")
         return claims
