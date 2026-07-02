@@ -140,90 +140,13 @@
     .nav__dropdown svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
 
     /* ── LOGIN POPUP ─────────────────────────────────── */
-    .overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.45);
-      z-index: 1000;
-      display: none; align-items: center; justify-content: center;
-      padding: 20px;
-    }
-    .overlay.open { display: flex; }
-
-    .popup {
-      background: var(--white);
-      border-radius: var(--radius);
-      width: 100%; max-width: 380px;
-      padding: 32px 28px;
-      position: relative;
-      box-shadow: var(--shadow-md);
-    }
-    .popup__close {
-      position: absolute; top: 14px; right: 14px;
-      width: 30px; height: 30px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--gray-3); font-size: 20px; line-height: 1;
-      transition: background var(--transition);
-    }
-    .popup__close:hover { background: var(--gray-5); color: var(--gray-1); }
-
-    .popup__logo {
-      text-align: center; margin-bottom: 4px;
-      font-size: 22px; font-weight: 800; color: var(--brand);
-    }
-    .popup__sub { text-align: center; font-size: 13px; color: var(--gray-2); margin-bottom: 26px; }
-
-    .popup__step { display: none; }
-    .popup__step.active { display: block; }
-
-    .field { margin-bottom: 16px; }
-    .field label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-2); margin-bottom: 6px; letter-spacing: .03em; text-transform: uppercase; }
-    .field input {
-      width: 100%; padding: 13px 14px;
-      border: 1.5px solid var(--gray-4); border-radius: var(--radius-sm);
-      font-size: 15px; color: var(--black);
-      transition: border-color var(--transition);
-      background: var(--white);
-    }
-    .field input:focus { outline: none; border-color: var(--brand); }
-
-    .phone-row { display: flex; gap: 8px; }
-    .phone-row .cc {
-      flex-shrink: 0; padding: 13px 12px;
-      border: 1.5px solid var(--gray-4); border-radius: var(--radius-sm);
-      font-size: 15px; color: var(--gray-2); background: var(--gray-5);
-    }
-    .phone-row input { flex: 1; }
-
-    .btn-primary {
-      width: 100%; padding: 14px;
-      background: var(--brand); color: var(--white);
-      border-radius: 24px; font-size: 15px; font-weight: 600;
-      transition: background var(--transition);
-      margin-top: 4px;
-    }
-    .btn-primary:hover { background: var(--brand-dark); }
-    .btn-primary:disabled { background: var(--gray-4); cursor: not-allowed; }
-
-    .popup__msg {
-      font-size: 13px; text-align: center; margin-top: 12px;
-      min-height: 18px; padding: 6px 10px; border-radius: 6px;
-    }
-    .popup__msg.error { background: #fdecea; color: #c62828; }
-    .popup__msg.success { background: #e8f5e9; color: #2e7d32; }
-
-    .resend-row {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-top: 10px; font-size: 13px; color: var(--gray-2);
-    }
-    .resend-row button { color: var(--brand); font-weight: 600; font-size: 13px; }
-    .resend-row button:disabled { color: var(--gray-3); cursor: not-allowed; }
-
-    .back-link { display: block; text-align: center; margin-top: 14px; font-size: 13px; color: var(--gray-3); }
-    .back-link span { color: var(--brand); font-weight: 600; cursor: pointer; }
+    /* Popup markup/styles/JS now live in components/login_popup.html
+       (included below) so the same login popup can be reused on the
+       cart page, booking page, etc. */
 
     /* ── HERO ────────────────────────────────────────── */
     .hero {
-      display: grid; grid-template-columns: 1fr 1fr;
+      display: grid; grid-template-columns: .8fr 1.2fr;
       min-height: 460px; max-width: var(--max);
       margin: 0 auto; padding: 0 20px;
       gap: 0; align-items: stretch;
@@ -279,11 +202,11 @@
 
     /* right — banner image */
     .hero__right {
-      position: relative; overflow: hidden; border-radius: 0 0 0 var(--radius);
+      position: relative; overflow: hidden; border-radius: var(--radius);
     }
     .hero__img {
       width: 100%; height: 100%; min-height: 380px;
-      object-fit: cover; border-radius: 0 0 0 var(--radius);
+      object-fit: cover; border-radius: var(--radius);
     }
     .hero__img-placeholder {
       width: 100%; height: 100%; min-height: 380px;
@@ -296,13 +219,21 @@
 
     /* ── SECTION HEADER ──────────────────────────────── */
     .sec-head {
-      display: flex; align-items: baseline; justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 22px;
     }
-    .sec-head h2 { font-size: 22px; font-weight: 700; }
-    .sec-head a { font-size: 13px; color: var(--brand); font-weight: 600; }
+    .sec-head h2 { font-size: 28px; font-weight: 800; letter-spacing: -.3px; color: var(--black); }
+    .see-all {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 8px 18px; border: 1.5px solid var(--gray-4); border-radius: 24px;
+      font-size: 13px; font-weight: 600; color: var(--brand); white-space: nowrap;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .see-all:hover { background: var(--brand-tint); border-color: var(--brand-light); }
 
     /* ── HORIZONTAL SCROLL ROW ───────────────────────── */
+    .scroll-wrap { position: relative; }
     .h-scroll {
       display: flex; gap: 16px;
       overflow-x: auto; scroll-snap-type: x proximity;
@@ -311,74 +242,102 @@
     }
     .h-scroll::-webkit-scrollbar { display: none; }
 
+    /* floating prev/next scroll buttons — reveal the cards hidden off-screen */
+    .scroll-arrow {
+      position: absolute; top: 38%; transform: translateY(-50%);
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--white); box-shadow: var(--shadow-md);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 5; transition: box-shadow var(--transition), transform .15s ease;
+    }
+    .scroll-arrow:hover { box-shadow: 0 6px 22px rgba(0,0,0,.18); transform: translateY(-50%) scale(1.05); }
+    .scroll-arrow svg { width: 18px; height: 18px; stroke: var(--black); fill: none; stroke-width: 2; }
+    .scroll-arrow--prev { left: -6px; }
+    .scroll-arrow--next { right: -6px; }
+    @media (max-width: 768px) { .scroll-arrow { display: none !important; } }
+
+    /* ── SHARED: rating + price rows (service & package cards) ──── */
+    .card__rating { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--gray-1); margin-bottom: 4px; }
+    .card__star { width: 12px; height: 12px; fill: var(--black); flex-shrink: 0; }
+    .card__rating-num { font-weight: 600; }
+    .card__rating-count { color: var(--gray-3); }
+    .card__price-row { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+    .card__price { font-size: 15px; font-weight: 700; color: var(--black); }
+    .card__price-orig { font-size: 13px; color: var(--gray-3); text-decoration: line-through; }
+
     /* ── SERVICE CARD ────────────────────────────────── */
     .svc-card {
-      flex: 0 0 200px; scroll-snap-align: start;
-      border-radius: var(--radius); overflow: hidden;
-      background: var(--white); border: 1px solid var(--gray-5);
-      box-shadow: var(--shadow); cursor: pointer;
-      transition: box-shadow var(--transition), transform var(--transition);
+      flex: 0 0 218px; scroll-snap-align: start;
+      cursor: pointer;
     }
-    .svc-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-
-    .svc-card__img {
-      width: 100%; height: 140px; object-fit: cover;
+    .svc-card__img-wrap {
+      width: 100%; aspect-ratio: 1 / 0.92; border-radius: 16px; overflow: hidden;
       background: var(--gray-5);
-      display: block;
     }
+    .svc-card__img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transition: transform .35s ease;
+    }
+    .svc-card:hover .svc-card__img { transform: scale(1.05); }
     .svc-card__img-ph {
-      width: 100%; height: 140px;
+      width: 100%; height: 100%;
       background: linear-gradient(135deg, var(--brand-tint), var(--brand-light));
       display: flex; align-items: center; justify-content: center;
     }
     .svc-card__img-ph svg { width: 40px; height: 40px; stroke: var(--brand); fill: none; opacity: .5; }
 
-    .svc-card__body { padding: 12px 14px 14px; }
-    .svc-card__name { font-size: 14px; font-weight: 600; line-height: 1.3; margin-bottom: 6px; color: var(--gray-1); }
-    .svc-card__price { font-size: 15px; font-weight: 700; color: var(--black); }
+    .svc-card__body { padding: 12px 2px 0; }
+    .svc-card__name {
+      font-size: 15px; font-weight: 600; line-height: 1.3; margin-bottom: 6px; color: var(--black);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
     .svc-card__dur { font-size: 12px; color: var(--gray-3); margin-top: 2px; }
 
     .svc-card.unavailable { opacity: .5; pointer-events: none; }
 
     /* ── PACKAGE CARD ────────────────────────────────── */
     .pkg-card {
-      flex: 0 0 240px; scroll-snap-align: start;
-      border-radius: var(--radius); overflow: hidden;
-      background: var(--white); border: 1px solid var(--gray-5);
-      box-shadow: var(--shadow); cursor: pointer;
-      transition: box-shadow var(--transition), transform var(--transition);
+      flex: 0 0 218px; scroll-snap-align: start;
+      cursor: pointer;
     }
-    .pkg-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    .pkg-card__img {
-      width: 100%; height: 130px; object-fit: cover;
+    .pkg-card__img-wrap {
+      position: relative;
+      width: 100%; aspect-ratio: 1 / 0.92; border-radius: 16px; overflow: hidden;
       background: linear-gradient(135deg, var(--brand-tint), var(--brand-light));
-      display: flex; align-items: center; justify-content: center;
     }
-    .pkg-card__img img { width: 100%; height: 100%; object-fit: cover; }
-    .pkg-card__img svg { width: 40px; height: 40px; stroke: var(--brand); fill: none; opacity: .5; }
-    .pkg-card__body { padding: 14px; }
-    .pkg-card__name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-    .pkg-card__svcs { font-size: 12px; color: var(--gray-2); margin-bottom: 10px; line-height: 1.5; }
-    .pkg-card__footer { display: flex; align-items: center; justify-content: space-between; }
-    .pkg-card__price { font-size: 16px; font-weight: 700; }
+    .pkg-card__img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s ease; }
+    .pkg-card:hover .pkg-card__img-wrap img { transform: scale(1.05); }
+    .pkg-card__img-wrap svg { width: 40px; height: 40px; stroke: var(--brand); fill: none; opacity: .5; }
+    .pkg-card__img-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+
     .pkg-card__add {
-      padding: 7px 16px; border-radius: 20px;
-      background: var(--brand); color: var(--white);
-      font-size: 13px; font-weight: 600;
-      transition: background var(--transition);
+      position: absolute; top: 8px; right: 8px;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--white); box-shadow: var(--shadow-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; line-height: 1; color: var(--brand);
+      transition: background var(--transition), color var(--transition), transform var(--transition);
     }
-    .pkg-card__add:hover { background: var(--brand-dark); }
+    .pkg-card__add:hover { background: var(--brand); color: var(--white); transform: scale(1.08); }
+
+    .pkg-card__body { padding: 12px 2px 0; }
+    .pkg-card__name {
+      font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--black);
+      display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .pkg-card__svcs { font-size: 12px; color: var(--gray-2); margin-bottom: 4px; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 
     /* ── SKELETON ─────────────────────────────────────── */
     .skeleton {
       background: linear-gradient(90deg, var(--gray-5) 25%, #ececec 50%, var(--gray-5) 75%);
       background-size: 200% 100%;
       animation: skel 1.4s infinite;
-      border-radius: var(--radius-sm);
+      border-radius: 16px;
     }
     @keyframes skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    .skeleton-card { flex: 0 0 200px; height: 220px; }
-    .skeleton-pkg { flex: 0 0 240px; height: 220px; }
+    .skeleton-card { flex: 0 0 218px; height: 240px; }
+    .skeleton-pkg { flex: 0 0 218px; height: 240px; }
 
     /* ── REVIEW CARD ─────────────────────────────────── */
     .rev-card {
@@ -486,13 +445,17 @@
       .footer__grid { grid-template-columns: 1fr 1fr; }
 
       .nav__logo-text { font-size: 17px; }
+
+      /* cards */
+      .svc-card, .pkg-card { flex: 0 0 172px; }
+      .skeleton-card, .skeleton-pkg { flex: 0 0 172px; height: 210px; }
     }
 
     @media (max-width: 480px) {
       .footer__grid { grid-template-columns: 1fr; }
-      .popup { padding: 26px 18px; }
-      .svc-card { flex: 0 0 170px; }
-      .pkg-card { flex: 0 0 210px; }
+      .svc-card { flex: 0 0 152px; }
+      .pkg-card { flex: 0 0 152px; }
+      .sec-head h2 { font-size: 22px; }
     }
   </style>
 </head>
@@ -547,49 +510,7 @@
 </nav>
 
 <!-- ═══════════════════════ LOGIN POPUP ═══════════════════════ -->
-<div class="overlay" id="loginOverlay" role="dialog" aria-modal="true" aria-label="Login">
-  <div class="popup">
-    <button class="popup__close" onclick="closeLogin()" aria-label="Close">&times;</button>
-    <div class="popup__logo">VOGX</div>
-    <p class="popup__sub">Sign in to book your services</p>
-
-    <!-- Step 1: phone -->
-    <div class="popup__step active" id="step1">
-      <div class="field">
-        <label for="phoneInput">Phone Number</label>
-        <div class="phone-row">
-          <span class="cc">+91</span>
-          <input type="tel" id="phoneInput" placeholder="10-digit number"
-                 maxlength="10" inputmode="numeric"
-                 onkeydown="if(event.key==='Enter') sendOtp()">
-        </div>
-      </div>
-      <button class="btn-primary" id="sendOtpBtn" onclick="sendOtp()">Send OTP</button>
-      <p class="popup__msg" id="step1Msg"></p>
-    </div>
-
-    <!-- Step 2: OTP -->
-    <div class="popup__step" id="step2">
-      <div class="field">
-        <label for="otpInput">Enter OTP</label>
-        <input type="text" id="otpInput" placeholder="6-digit code"
-               maxlength="6" inputmode="numeric"
-               onkeydown="if(event.key==='Enter') verifyOtp()">
-      </div>
-      <div class="field">
-        <label for="nameInput">Your Name <span style="font-weight:400;color:var(--gray-3)">(first time only)</span></label>
-        <input type="text" id="nameInput" placeholder="e.g. Adnan Farooqui">
-      </div>
-      <button class="btn-primary" id="verifyBtn" onclick="verifyOtp()">Verify & Login</button>
-      <div class="resend-row">
-        <span id="resendTimer">Resend in 30s</span>
-        <button id="resendBtn" onclick="resendOtp()" disabled>Resend OTP</button>
-      </div>
-      <p class="popup__msg" id="step2Msg"></p>
-      <p class="back-link"><span onclick="goToStep1()">← Change number</span></p>
-    </div>
-  </div>
-</div>
+{% include 'components/login_popup.html' %}
 
 <!-- ═══════════════════════ HERO ═══════════════════════ -->
 <section class="hero" aria-label="Hero">
@@ -627,13 +548,21 @@
   <div class="container">
     <div class="sec-head">
       <h2>Special Packages</h2>
-      <a href="services.html" id="pkgSeeAll">See all</a>
+      <a href="services.html" id="pkgSeeAll" class="see-all">See all</a>
     </div>
-    <div class="h-scroll" id="packagesRow" role="list">
-      <!-- skeletons while loading -->
-      <div class="skeleton skeleton-pkg" aria-hidden="true"></div>
-      <div class="skeleton skeleton-pkg" aria-hidden="true"></div>
-      <div class="skeleton skeleton-pkg" aria-hidden="true"></div>
+    <div class="scroll-wrap">
+      <div class="h-scroll" id="packagesRow" role="list">
+        <!-- skeletons while loading -->
+        <div class="skeleton skeleton-pkg" aria-hidden="true"></div>
+        <div class="skeleton skeleton-pkg" aria-hidden="true"></div>
+        <div class="skeleton skeleton-pkg" aria-hidden="true"></div>
+      </div>
+      <button type="button" class="scroll-arrow scroll-arrow--prev" data-target="packagesRow" aria-label="Scroll left" style="display:none;">
+        <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button type="button" class="scroll-arrow scroll-arrow--next" data-target="packagesRow" aria-label="Scroll right" style="display:none;">
+        <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
     </div>
   </div>
 </section>
@@ -799,137 +728,14 @@ async function logout() {
 }
 
 /* ─── LOGIN POPUP ───────────────────────────────────────── */
-let _phone = '';
-let _resendTimer = null;
-
-function openLogin() {
-  document.getElementById('loginOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  goToStep1();
-}
-function closeLogin() {
-  document.getElementById('loginOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-  clearInterval(_resendTimer);
-}
-// Close on backdrop click
-document.getElementById('loginOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('loginOverlay')) closeLogin();
-});
-
-function goToStep1() {
-  document.getElementById('step1').classList.add('active');
-  document.getElementById('step2').classList.remove('active');
-  document.getElementById('phoneInput').value = '';
-  setMsg('step1Msg', '', '');
-}
-function goToStep2() {
-  document.getElementById('step1').classList.remove('active');
-  document.getElementById('step2').classList.add('active');
-  document.getElementById('otpInput').value = '';
-  document.getElementById('nameInput').value = '';
-  setMsg('step2Msg', '', '');
-  startResendCooldown();
-  setTimeout(() => document.getElementById('otpInput').focus(), 50);
-}
-
-function setMsg(id, text, type) {
-  const el = document.getElementById(id);
-  el.textContent = text;
-  el.className = `popup__msg ${type}`;
-}
-
-async function sendOtp() {
-  const phone = document.getElementById('phoneInput').value.trim();
-  if (!/^\d{10}$/.test(phone)) {
-    setMsg('step1Msg', 'Enter a valid 10-digit phone number', 'error'); return;
-  }
-  const btn = document.getElementById('sendOtpBtn');
-  btn.disabled = true; btn.textContent = 'Sending…';
-
-  try {
-    await apiFetch('/auth/send-otp/', { method: 'POST', body: JSON.stringify({ phone }) });
-    _phone = phone;
-    setMsg('step1Msg', 'OTP sent!', 'success');
-    setTimeout(goToStep2, 400);
-  } catch (err) {
-    const msg = err.data?.detail || 'Could not send OTP. Try again.';
-    setMsg('step1Msg', msg, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Send OTP';
-  }
-}
-
-async function verifyOtp() {
-  const otp  = document.getElementById('otpInput').value.trim();
-  const name = document.getElementById('nameInput').value.trim();
-  if (!otp) { setMsg('step2Msg', 'Enter the OTP', 'error'); return; }
-
-  const btn = document.getElementById('verifyBtn');
-  btn.disabled = true; btn.textContent = 'Verifying…';
-
-  try {
-    const data = await apiFetch('/auth/verify-otp/', {
-      method: 'POST',
-      body: JSON.stringify({ phone: _phone, otp, name })
-    });
-    setToken(data.token);
-    setMsg('step2Msg', 'Login successful!', 'success');
-    clearInterval(_resendTimer);
-    setTimeout(() => {
-      closeLogin();
-      updateNavbar();
-      toast(`Welcome${data.user?.name ? ', ' + data.user.name : ''}!`, 'success');
-    }, 500);
-  } catch (err) {
-    const msg = err.data?.detail || 'Invalid OTP. Try again.';
-    setMsg('step2Msg', msg, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Verify & Login';
-  }
-}
-
-async function resendOtp() {
-  try {
-    await apiFetch('/auth/send-otp/', { method: 'POST', body: JSON.stringify({ phone: _phone }) });
-    setMsg('step2Msg', 'OTP resent!', 'success');
-    startResendCooldown();
-  } catch (err) {
-    const msg = err.data?.detail || 'Could not resend OTP.';
-    setMsg('step2Msg', msg, 'error');
-  }
-}
-
-function startResendCooldown() {
-  const btn = document.getElementById('resendBtn');
-  const timer = document.getElementById('resendTimer');
-  btn.disabled = true;
-  let sec = 30;
-  timer.textContent = `Resend in ${sec}s`;
-  clearInterval(_resendTimer);
-  _resendTimer = setInterval(() => {
-    sec--;
-    if (sec <= 0) {
-      clearInterval(_resendTimer);
-      btn.disabled = false;
-      timer.textContent = '';
-    } else {
-      timer.textContent = `Resend in ${sec}s`;
-    }
-  }, 1000);
-}
+/* openLogin(), closeLogin() and all OTP logic are provided by the
+   included components/login_popup.html — nothing to do here. */
 
 /* ─── GENDER FILTER ────────────────────────────────────── */
 let _gender = 'men';
 
 function setGender(g) {
-  _gender = g;
-  document.getElementById('btnMen').classList.toggle('active', g === 'men');
-  document.getElementById('btnWomen').classList.toggle('active', g === 'women');
-  document.getElementById('btnMen').setAttribute('aria-pressed', g === 'men');
-  document.getElementById('btnWomen').setAttribute('aria-pressed', g === 'women');
-  loadPackages();
-  loadCategories();
+  window.location.href = `/services?gender=${g}`;
 }
 
 /* ─── SALON INFO ────────────────────────────────────────── */
@@ -987,7 +793,9 @@ async function loadPackages() {
     row.innerHTML = '';
 
     if (!items.length) {
-      row.innerHTML = '<div class="empty-state">No packages available</div>'; return;
+      row.innerHTML = '<div class="empty-state">No packages available</div>';
+      setupScrollArrows(row);
+      return;
     }
 
     items.forEach(pkg => {
@@ -995,21 +803,18 @@ async function loadPackages() {
       const card = document.createElement('div');
       card.className = 'pkg-card'; card.setAttribute('role', 'listitem');
       card.innerHTML = `
-        <div class="pkg-card__img">
+        <div class="pkg-card__img-wrap">
           ${pkg.image
-            ? `<img src="${pkg.image}" alt="${esc(pkg.name)}" style="width:100%;height:100%;object-fit:cover;">`
-            : `<svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>`}
+            ? `<img src="${pkg.image}" alt="${esc(pkg.name)}" loading="lazy">`
+            : `<div class="pkg-card__img-ph"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg></div>`}
+          <button class="pkg-card__add" data-id="${pkg.id}" data-name="${esc(pkg.name)}"
+                  data-price="${pkg.package_price}" data-img="${pkg.image || ''}" aria-label="Add ${esc(pkg.name)} to cart">+</button>
         </div>
         <div class="pkg-card__body">
           <div class="pkg-card__name">${esc(pkg.name)}</div>
+          ${ratingBlock(pkg)}
           <div class="pkg-card__svcs">${esc(svcNames)}</div>
-          <div class="pkg-card__footer">
-            <div class="pkg-card__price">₹${Number(pkg.package_price).toLocaleString('en-IN')}</div>
-            <button class="pkg-card__add" data-id="${pkg.id}" data-name="${esc(pkg.name)}"
-                    data-price="${pkg.package_price}" data-img="${pkg.image || ''}">
-              Add +
-            </button>
-          </div>
+          ${priceBlock(pkg.package_price, pkg.original_price || pkg.mrp)}
         </div>`;
       row.appendChild(card);
     });
@@ -1028,12 +833,13 @@ async function loadPackages() {
     });
 
     // click card → service detail of first service
-    row.querySelectorAll('.pkg-card').forEach((card, i) => {
-      card.style.cursor = 'pointer';
+    row.querySelectorAll('.pkg-card').forEach((card) => {
       card.addEventListener('click', () => {
         window.location.href = `services.html?gender=${_gender}`;
       });
     });
+
+    setupScrollArrows(row);
   } catch {
     row.innerHTML = '<div class="empty-state">Could not load packages</div>';
   }
@@ -1056,12 +862,20 @@ async function loadCategories() {
         <div class="container">
           <div class="sec-head">
             <h2>${esc(cat.name)}</h2>
-            <a href="services.html?category=${cat.id}&gender=${_gender}">See all</a>
+            <a href="services.html?category=${cat.id}&gender=${_gender}" class="see-all">See all</a>
           </div>
-          <div class="h-scroll svc-row" role="list" id="svcRow-${cat.id}">
-            <div class="skeleton skeleton-card" aria-hidden="true"></div>
-            <div class="skeleton skeleton-card" aria-hidden="true"></div>
-            <div class="skeleton skeleton-card" aria-hidden="true"></div>
+          <div class="scroll-wrap">
+            <div class="h-scroll svc-row" role="list" id="svcRow-${cat.id}">
+              <div class="skeleton skeleton-card" aria-hidden="true"></div>
+              <div class="skeleton skeleton-card" aria-hidden="true"></div>
+              <div class="skeleton skeleton-card" aria-hidden="true"></div>
+            </div>
+            <button type="button" class="scroll-arrow scroll-arrow--prev" data-target="svcRow-${cat.id}" aria-label="Scroll left" style="display:none;">
+              <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button type="button" class="scroll-arrow scroll-arrow--next" data-target="svcRow-${cat.id}" aria-label="Scroll right" style="display:none;">
+              <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
           </div>
         </div>`;
       container.appendChild(section);
@@ -1080,7 +894,9 @@ async function loadServicesForCategory(catId) {
     row.innerHTML = '';
 
     if (!items.length) {
-      row.innerHTML = '<div class="empty-state">No services in this category</div>'; return;
+      row.innerHTML = '<div class="empty-state">No services in this category</div>';
+      setupScrollArrows(row);
+      return;
     }
 
     items.forEach(svc => {
@@ -1090,12 +906,15 @@ async function loadServicesForCategory(catId) {
       card.setAttribute('tabindex', '0');
       card.setAttribute('aria-label', svc.name);
       card.innerHTML = `
-        ${svc.preview_image
-          ? `<img class="svc-card__img" src="${svc.preview_image}" alt="${esc(svc.name)}" loading="lazy">`
-          : `<div class="svc-card__img-ph"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>`}
+        <div class="svc-card__img-wrap">
+          ${svc.preview_image
+            ? `<img class="svc-card__img" src="${svc.preview_image}" alt="${esc(svc.name)}" loading="lazy">`
+            : `<div class="svc-card__img-ph"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>`}
+        </div>
         <div class="svc-card__body">
           <div class="svc-card__name">${esc(svc.name)}</div>
-          <div class="svc-card__price">₹${Number(svc.price).toLocaleString('en-IN')}</div>
+          ${ratingBlock(svc)}
+          ${priceBlock(svc.price, svc.original_price || svc.mrp)}
           <div class="svc-card__dur">${svc.duration_minutes} min</div>
         </div>`;
 
@@ -1109,6 +928,8 @@ async function loadServicesForCategory(catId) {
 
       row.appendChild(card);
     });
+
+    setupScrollArrows(row);
   } catch {
     row.innerHTML = '<div class="empty-state">Could not load services</div>';
   }
@@ -1156,6 +977,68 @@ function toast(msg, type = 'success') {
   rack.appendChild(t);
   setTimeout(() => t.remove(), 3200);
 }
+
+/* ─── CARD HELPERS: rating / price / horizontal scroll ───── */
+const STAR_SVG = '<svg class="card__star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+
+function formatCount(n) {
+  n = Number(n);
+  if (!n) return '';
+  if (n >= 1000000) return (Math.round(n / 100000) / 10) + 'M';
+  if (n >= 1000)    return (Math.round(n / 100) / 10) + 'K';
+  return String(n);
+}
+
+// Reads whichever rating/review-count field names the API happens to expose;
+// renders nothing if the item has no rating data yet.
+function ratingBlock(item) {
+  const rating = item.rating ?? item.avg_rating ?? item.average_rating ?? item.rating_avg;
+  if (!rating) return '';
+  const count = item.review_count ?? item.reviews_count ?? item.total_reviews ?? item.rating_count;
+  const countStr = count ? ` <span class="card__rating-count">(${formatCount(count)})</span>` : '';
+  return `<div class="card__rating">${STAR_SVG}<span class="card__rating-num">${Number(rating).toFixed(2)}</span>${countStr}</div>`;
+}
+
+// Current price, plus a struck-through original price if one is supplied and is higher.
+function priceBlock(price, original) {
+  const cur = `₹${Number(price).toLocaleString('en-IN')}`;
+  const showOrig = original && Number(original) > Number(price);
+  const origHtml = showOrig ? `<span class="card__price-orig">₹${Number(original).toLocaleString('en-IN')}</span>` : '';
+  return `<div class="card__price-row"><span class="card__price">${cur}</span>${origHtml}</div>`;
+}
+
+// Shows/hides the floating prev/next buttons for a horizontally-scrollable
+// row and wires them up to actually scroll. Safe to call repeatedly
+// (e.g. every time a row is re-rendered).
+function setupScrollArrows(rowEl) {
+  const wrap = rowEl.closest('.scroll-wrap');
+  if (!wrap) return;
+  const prevBtn = wrap.querySelector('.scroll-arrow--prev');
+  const nextBtn = wrap.querySelector('.scroll-arrow--next');
+
+  function update() {
+    const scrollable = rowEl.scrollWidth > rowEl.clientWidth + 4;
+    const maxScroll = rowEl.scrollWidth - rowEl.clientWidth - 4;
+    if (prevBtn) prevBtn.style.display = scrollable && rowEl.scrollLeft > 8 ? 'flex' : 'none';
+    if (nextBtn) nextBtn.style.display = scrollable && rowEl.scrollLeft < maxScroll ? 'flex' : 'none';
+  }
+
+  rowEl.addEventListener('scroll', update);
+  window.addEventListener('resize', update);
+  // wait one frame so layout/images have a chance to settle before measuring
+  requestAnimationFrame(update);
+}
+
+// Single delegated click handler covers every scroll-arrow on the page,
+// including ones added later for dynamically-created category rows.
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.scroll-arrow');
+  if (!btn) return;
+  const row = document.getElementById(btn.dataset.target);
+  if (!row) return;
+  const dir = btn.classList.contains('scroll-arrow--prev') ? -1 : 1;
+  row.scrollBy({ left: dir * row.clientWidth * 0.9, behavior: 'smooth' });
+});
 
 /* ─── UTILS ─────────────────────────────────────────────── */
 function esc(s) {
