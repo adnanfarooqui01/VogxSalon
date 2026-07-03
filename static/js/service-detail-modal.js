@@ -37,6 +37,7 @@
 
      If the host page defines `openLogin()`, it's used to prompt login
      when an anonymous user hits "Add". Otherwise a toast is shown.
+     
    ════════════════════════════════════════════════════════════════════ */
 
 (function () {
