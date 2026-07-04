@@ -574,14 +574,16 @@
       gap: 40px; padding-bottom: 44px;
     }
     .footer__brand-logo {
-      font-family: var(--serif);
-      font-size: 26px; font-weight: 700; color: var(--white);
-      margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
-      font-style: italic;
+      margin-bottom: 10px; display: inline-flex; align-items: center; justify-content: center;
     }
     .footer__brand-logo img {
-      width: 36px; height: 36px; border-radius: 50%;
-      object-fit: cover; background: #333;
+      display: block;
+      max-height: 48px;
+      width: auto;
+      max-width: 180px;
+      object-fit: contain;
+      border-radius: 0;
+      background: transparent;
     }
     .footer__tagline { font-size: 13.5px; color: rgba(255,255,255,.5); margin-bottom: 22px; line-height: 1.6; max-width: 32ch; }
     .footer__socials { display: flex; gap: 10px; }
@@ -875,7 +877,6 @@
       <div>
         <div class="footer__brand-logo">
           <img id="footerLogoImg" src="" alt="VOGX" style="display:none;">
-          <span id="footerLogoText">VOGX</span>
         </div>
         <p class="footer__tagline" id="footerTagline">Look Good, Feel Great.</p>
         <div class="footer__socials">
@@ -1048,9 +1049,12 @@ async function loadSalonInfo() {
 
     if (salon.logo) {
       const fi = document.getElementById('footerLogoImg');
-      fi.src = salon.logo; fi.style.display = '';
+      if (fi) {
+        fi.src = salon.logo;
+        fi.alt = salon.name || 'VOGX Salon';
+        fi.style.display = '';
+      }
     }
-    document.getElementById('footerLogoText').textContent = salon.name || 'VOGX';
     if (salon.tagline) document.getElementById('footerTagline').textContent = salon.tagline;
     if (salon.phone)   document.getElementById('footerPhone').textContent = salon.phone;
     if (salon.email)   document.getElementById('footerEmail').textContent = salon.email;

@@ -14,7 +14,7 @@ def index(request):
 @require_http_methods(["GET"])
 def services_listing(request):
     """Services listing page with category pills and sticky navigation"""
-    return render(request, 'services_listing.html')
+    return render(request, 'services_listing_2.html')
 
 
 @require_http_methods(["GET"])
