@@ -745,7 +745,7 @@
         box-shadow: none; z-index: 80;
         margin: 0 -20px;
       }
-      .sidebar__list { grid-template-columns: repeat(4, 1fr); }
+      .sidebar__list { grid-template-columns: repeat(10, 1fr); }
       .editorial { grid-template-columns: 1fr; }
     }
 
@@ -765,7 +765,7 @@
 
       .container { padding: 0 16px; }
       .sidebar { margin: 0 -16px; }
-      .sidebar__list { grid-template-columns: repeat(3, 1fr); }
+      .sidebar__list { grid-template-columns: repeat(4, 1fr); }
 
       .svc-card2 { flex-direction: row; gap: 14px; padding: 16px; }
       .svc-card2__name { font-size: 16px; }
@@ -895,7 +895,7 @@
 <div class="page-hero-wrap">
   <section class="page-hero" aria-label="Services header">
     <img class="page-hero__img"
-         src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1600&q=80"
+         src="{% static 'images/hero_service.png' %}"
          alt="Salon interior"
          loading="lazy">
     <div class="page-hero__overlay">
@@ -991,8 +991,8 @@
       </div>
       <div class="footer__col">
         <h4>Services</h4>
-        <a href="services.html?gender=men">Men's Salon</a>
-        <a href="services.html?gender=women">Women's Salon</a>
+        <a href="services?gender=men">Men's Salon</a>
+        <a href="services?gender=women">Women's Salon</a>
       </div>
       <div class="footer__col">
         <h4>Contact</h4>

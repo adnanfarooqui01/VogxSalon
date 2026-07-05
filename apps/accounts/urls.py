@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import CustomUserViewSet, verify_firebase_token, profile, logout
+from .views import CustomUserViewSet, request_otp, verify_firebase_token, profile, logout
 
 app_name = 'accounts'
 
@@ -14,6 +14,7 @@ urlpatterns = [
     # User endpoints
     path('profile/', profile, name='profile'),
     path('logout/', logout, name='logout'),
+    path('request-otp/', request_otp, name='request-otp'),
     # Router endpoints
     *router.urls,
 ]

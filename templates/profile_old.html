@@ -1,0 +1,562 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrftoken" content="{{ csrf_token }}">
+    <title>My Profile - VOGX Salon</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body { background: var(--bg-page); }
+        .profile-container { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+        .profile-header { background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-dark) 100%); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; }
+        .profile-header h1 { margin: 0; font-size: 1.8rem; }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 2px solid var(--border-soft); }
+        .tab-btn { padding: 0.75rem 1.5rem; background: transparent; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); }
+        .tab-content { display: none; }
+        .tab-content.show { display: block; }
+        .card { background: white; border: 1px solid var(--border-soft); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+        .form-group input { width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem; }
+        .form-group input:disabled { background-color: var(--bg-page); color: var(--text-muted); }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 0.5rem; }
+        .btn-primary { background: var(--brand-primary); color: white; }
+        .btn-primary:hover { background: var(--brand-primary-dark); }
+        .btn-secondary { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-soft); }
+        .btn-danger { background: #c93a3a; color: white; }
+        .btn-danger:hover { background: #a92d2d; }
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .alert.success { background: #d4edda; color: #155724; }
+        .alert.error { background: #f8d7da; color: #721c24; }
+        .booking-card { background: white; border: 1px solid var(--border-soft); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; }
+        .booking-status { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .booking-status.confirmed { background: #e6f7ec; color: #1f9d52; }
+        .booking-status.pending { background: #fff3cd; color: #856404; }
+        .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } }
+        .booking-status.completed { background: #e2e3ff; color: #4b3f99; }
+        .booking-status.cancelled { background: #f8d7da; color: #721c24; }
+        .cancel-modal-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .cancel-modal-overlay.active { display: flex; }
+        .cancel-modal { background: white; border-radius: 12px; padding: 2rem; width: 90%; max-width: 420px; }
+        .cancel-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .cancel-modal select, .cancel-modal textarea { width: 100%; padding: 0.6rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header style="background: white; border-bottom: 1px solid var(--border-soft); padding: 1rem 2rem;">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+        <div onclick="window.location.href='/'" style="cursor: pointer; font-weight: 700; font-size: 1.3rem; color: var(--brand-primary);">VOGX</div>
+        <div style="display: flex; gap: 2rem; align-items: center;">
+            <a href="/services" style="text-decoration: none; color: var(--text-primary); font-weight: 500;">Services</a>
+            <div style="position: relative;">
+                <button id="profileBtn" style="background: var(--brand-primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 600;">👤 Profile</button>
+                <div id="profileDropdown" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e0e0e0; border-radius: 8px; min-width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; margin-top: 0.5rem;">
+                    <a href="/profile" style="display: block; padding: 0.75rem 1rem; border-bottom: 1px solid #e0e0e0; text-decoration: none; color: var(--text-primary); font-size: 0.95rem;">📋 My Profile</a>
+                    <a href="/profile?tab=bookings" style="display: block; padding: 0.75rem 1rem; border-bottom: 1px solid #e0e0e0; text-decoration: none; color: var(--text-primary); font-size: 0.95rem;">📅 My Bookings</a>
+                    <a href="/profile?tab=current" style="display: block; padding: 0.75rem 1rem; text-decoration: none; color: var(--text-primary); font-size: 0.95rem;">⏳ Current Bookings</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- PROFILE HEADER -->
+<section class="profile-header">
+    <div class="profile-container">
+        <h1>👤 My Profile</h1>
+        <p id="phoneDisplay">Welcome back!</p>
+    </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<div class="profile-container">
+    <!-- TABS -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="profile">📋 My Profile</button>
+        <button class="tab-btn" data-tab="bookings">📅 My Bookings</button>
+        <button class="tab-btn" data-tab="current">⏳ Current Bookings</button>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div id="profile" class="tab-content show">
+        <div class="card">
+            <h2>Personal Information</h2>
+            <div id="alerts"></div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="name" placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="phone" disabled>
+                    <small style="color: var(--text-muted); display: block; margin-top: 0.35rem;">Used to log in — can't be changed.</small>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" placeholder="Enter your email address">
+                    <small style="color: var(--text-muted); display: block; margin-top: 0.35rem;">Needed to complete a booking — you can update it anytime.</small>
+                </div>
+                <div class="form-group">
+                    <label>Member Since</label>
+                    <input type="text" id="joinDate" disabled>
+                </div>
+            </div>
+            
+            <div>
+                <button class="btn btn-primary" id="saveBtn">💾 Save Changes</button>
+                <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn btn-danger" id="logoutBtn">🚪 Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOOKINGS TAB -->
+    <div id="bookings" class="tab-content">
+        <div class="card">
+            <h2>My Bookings</h2>
+            <div id="bookingsList">
+                <div class="empty-state">Loading bookings...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CURRENT BOOKINGS TAB -->
+    <div id="current" class="tab-content">
+        <div class="card">
+            <h2>Current Bookings</h2>
+            <div id="currentBookingsList">
+                <div class="empty-state">Loading bookings...</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="cancelModalOverlay" class="cancel-modal-overlay">
+    <div class="cancel-modal">
+        <div class="cancel-modal-header">
+            <h3>Cancel Booking</h3>
+            <button class="cancel-modal-close" id="cancelModalClose" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">&times;</button>
+        </div>
+        <div class="form-group">
+            <label>Why are you cancelling?</label>
+            <select id="cancelReasonSelect">
+                <option value="">Select a reason</option>
+                <option value="change_of_plans">Change of plans</option>
+                <option value="booked_wrong_slot">Booked wrong date/time</option>
+                <option value="found_better_price">Found a better price elsewhere</option>
+                <option value="professional_unavailable">Professional/slot unavailable</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div class="form-group" id="cancelNoteGroup" style="display:none;">
+            <label>Please tell us more</label>
+            <textarea id="cancelNoteInput" rows="3" placeholder="What happened?"></textarea>
+        </div>
+        <div id="cancelModalError" class="alert error" style="display:none;"></div>
+        <div>
+            <button class="btn btn-danger" id="cancelConfirmBtn">Cancel Booking</button>
+            <button class="btn btn-secondary" id="cancelDismissBtn">Never mind</button>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer style="margin-top: 4rem; background-color: var(--bg-dark); color: var(--text-on-dark); padding: 2rem; text-align: center;">
+    <p>&copy; 2026 VOGX Salon. All rights reserved.</p>
+</footer>
+
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+const API = new VogxAPI();
+let currentProfile = null;
+
+// Show alert
+function showAlert(message, type) {
+    const alertsDiv = document.getElementById('alerts');
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${type}`;
+    alertDiv.textContent = message;
+    alertsDiv.innerHTML = '';
+    alertsDiv.appendChild(alertDiv);
+}
+
+// ── Booking card helpers ─────────────────────────────────────────
+const CANCEL_REASON_LABELS = {
+    change_of_plans: 'Change of plans',
+    booked_wrong_slot: 'Booked wrong date/time',
+    found_better_price: 'Found a better price elsewhere',
+    professional_unavailable: 'Professional/slot unavailable',
+    other: 'Other',
+};
+
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
+function formatAddress(group) {
+    const parts = [group.house_number, group.street_area, group.landmark].filter(Boolean);
+    const line = parts.join(', ');
+    if (line && group.pincode) return `${line} - ${group.pincode}`;
+    return line || group.pincode || '';
+}
+
+// Renders: booking type, address (home visits only), note, and — if the
+// booking was cancelled — the cancellation reason/note/date. Shared by
+// both the history cards and the current-bookings cards.
+function renderBookingDetails(group) {
+    const isHome = group.booking_type === 'home';
+    const address = formatAddress(group);
+    const status = (group.status || '').toLowerCase();
+
+    let html = `<p><strong>${isHome ? '🏠' : '🏬'} Type:</strong> ${isHome ? 'Home Visit' : 'In Salon'}</p>`;
+
+    if (isHome && address) {
+        html += `<p><strong>📍 Address:</strong> ${escapeHtml(address)}</p>`;
+    }
+    if (group.notes) {
+        html += `<p><strong>📝 Note:</strong> ${escapeHtml(group.notes)}</p>`;
+    }
+    if (status === 'cancelled') {
+        const reasonLabel = CANCEL_REASON_LABELS[group.cancellation_reason] || group.cancellation_reason || 'Not specified';
+        html += `
+            <div style="margin-top:0.75rem;padding:0.75rem 1rem;background:#f8d7da;border-radius:8px;color:#721c24;">
+                <p style="margin:0;"><strong>❌ Cancelled:</strong> ${escapeHtml(reasonLabel)}</p>
+                ${group.cancellation_note ? `<p style="margin:0.35rem 0 0;">${escapeHtml(group.cancellation_note)}</p>` : ''}
+                ${group.cancelled_at ? `<p style="margin:0.35rem 0 0;font-size:0.8rem;opacity:0.8;">on ${new Date(group.cancelled_at).toLocaleString()}</p>` : ''}
+            </div>`;
+    }
+    return html;
+}
+
+function renderPriceBreakdown(group) {
+    return `
+        <p style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-soft);">
+            Subtotal: ₹${parseFloat(group.subtotal).toFixed(2)} +
+            Service: ₹${parseFloat(group.service_charge).toFixed(2)} +
+            Convenience: ₹${parseFloat(group.convenience_fee).toFixed(2)}
+        </p>
+        <p><strong>💰 Total:</strong> ₹${parseFloat(group.total_price).toFixed(2)}</p>`;
+}
+
+// Tab switching
+function showTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('show'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    const tabEl = document.getElementById(tabName);
+    if (tabEl) tabEl.classList.add('show');
+    
+    const btn = document.querySelector(`[data-tab="${tabName}"]`);
+    if (btn) btn.classList.add('active');
+    
+    if (tabName === 'bookings') loadBookings();
+    if (tabName === 'current') loadCurrentBookings();
+}
+
+// Load profile
+async function loadProfile() {
+    try {
+        const profile = await API.getProfile();
+        currentProfile = profile;
+        document.getElementById('phone').value = profile.phone || '';
+        document.getElementById('name').value = profile.name || '';
+        document.getElementById('email').value = profile.email || '';
+        document.getElementById('phoneDisplay').textContent = `Phone: ${profile.phone}`;
+        const joinDate = new Date(profile.created_at || new Date());
+        document.getElementById('joinDate').value = joinDate.toLocaleDateString();
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        if (error.message && error.message.includes('401')) {
+            window.location.href = '/login';
+        }
+    }
+}
+
+// Load bookings
+async function loadBookings() {
+    try {
+        const response = await fetch('/api/bookings/booking-groups/?page=1', {
+            headers: { 'Authorization': `Token ${API.token}` }
+        });
+        const data = await response.json();
+        const list = document.getElementById('bookingsList');
+        list.innerHTML = '';
+
+        const groups = (data.results || data).filter(group =>
+            ['cancelled', 'completed'].includes((group.status || '').toLowerCase())
+        );
+        if (!groups || groups.length === 0) {
+            list.innerHTML = `<div class="empty-state"><h3>No Bookings Yet</h3><p>You haven't made any bookings yet.</p></div>`;
+            return;
+        }
+
+        groups.forEach(group => {
+            const card = document.createElement('div');
+            card.className = 'booking-card';
+            const date = new Date(group.booking_date).toLocaleDateString();
+            const status = group.status || 'confirmed';
+
+            const servicesHtml = group.bookings.map(b =>
+                `<li>${b.service_name} — ₹${parseFloat(b.price).toFixed(2)}</li>`
+            ).join('');
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                    <div><strong>Order #${group.id}</strong> (${group.bookings.length} service${group.bookings.length > 1 ? 's' : ''})</div>
+                    <span class="booking-status ${status}">${status.toUpperCase()}</span>
+                </div>
+                <ul style="margin: 0 0 1rem 1.2rem; padding: 0; color: var(--text-secondary);">${servicesHtml}</ul>
+                <div>
+                    <p><strong>📅 Date:</strong> ${date}</p>
+                    <p><strong>⏰ Time:</strong> ${group.booking_time || 'N/A'}</p>
+                    ${renderBookingDetails(group)}
+                    ${renderPriceBreakdown(group)}
+                </div>
+                ${status === 'confirmed' ? `<button class="btn btn-danger" style="margin-top:0.75rem;" onclick="openCancelModal(${group.id})">Cancel Booking</button>` : ''}
+            `;
+            list.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error loading bookings:', error);
+        document.getElementById('bookingsList').innerHTML = '<div class="empty-state"><p>Failed to load bookings</p></div>';
+    }
+}
+// Load current bookings
+async function loadCurrentBookings() {
+    try {
+        const response = await fetch('/api/bookings/booking-groups/?page=1&status=confirmed', {
+            headers: {
+                'Authorization': `Token ${API.token}`
+            }
+        });
+
+        const data = await response.json();
+        const currentBookingsList = document.getElementById('currentBookingsList');
+
+        currentBookingsList.innerHTML = '';
+
+        const groups = data.results || data;
+
+        if (!groups || groups.length === 0) {
+            currentBookingsList.innerHTML = `
+                <div class="empty-state">
+                    <h3>No Current Bookings</h3>
+                    <p>You don't have any active bookings.</p>
+                </div>
+            `;
+            return;
+        }
+
+        groups.forEach(group => {
+            const card = document.createElement('div');
+            card.className = 'booking-card';
+
+            const date = new Date(group.booking_date).toLocaleDateString();
+
+            const servicesHtml = group.bookings.map(booking => `
+                <li>
+                    ${booking.service_name}
+                    - ₹${parseFloat(booking.price).toFixed(2)}
+                </li>
+            `).join('');
+
+            card.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                    <div>
+                        <strong>Order #${group.id}</strong>
+                    </div>
+                    <span class="booking-status confirmed">
+                        CONFIRMED
+                    </span>
+                </div>
+
+                <ul style="margin:0 0 1rem 1.2rem;padding:0;">
+                    ${servicesHtml}
+                </ul>
+
+                <p><strong>📅 Date:</strong> ${date}</p>
+                <p><strong>⏰ Time:</strong> ${group.booking_time || 'N/A'}</p>
+                ${renderBookingDetails(group)}
+
+                <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #eee;">
+                    ${renderPriceBreakdown(group)}
+                </div>
+
+                <button
+                    class="btn btn-danger"
+                    style="margin-top:1rem;"
+                    onclick="openCancelModal(${group.id})">
+                    Cancel Booking
+                </button>
+            `;
+
+            currentBookingsList.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error('Error loading current bookings:', error);
+
+        document.getElementById('currentBookingsList').innerHTML = `
+            <div class="empty-state">
+                <p>Failed to load current bookings</p>
+            </div>
+        `;
+    }
+}
+
+let cancelBookingId = null;
+
+function openCancelModal(bookingId) {
+    cancelBookingId = bookingId;
+    document.getElementById('cancelReasonSelect').value = '';
+    document.getElementById('cancelNoteInput').value = '';
+    document.getElementById('cancelNoteGroup').style.display = 'none';
+    document.getElementById('cancelModalError').style.display = 'none';
+    document.getElementById('cancelModalOverlay').classList.add('active');
+}
+
+function closeCancelModal() {
+    document.getElementById('cancelModalOverlay').classList.remove('active');
+    cancelBookingId = null;
+}
+
+document.getElementById('cancelReasonSelect').addEventListener('change', (e) => {
+    document.getElementById('cancelNoteGroup').style.display = e.target.value === 'other' ? 'block' : 'none';
+});
+
+document.getElementById('cancelModalClose').addEventListener('click', closeCancelModal);
+document.getElementById('cancelDismissBtn').addEventListener('click', closeCancelModal);
+
+document.getElementById('cancelConfirmBtn').addEventListener('click', async () => {
+    const reason = document.getElementById('cancelReasonSelect').value;
+    const note = document.getElementById('cancelNoteInput').value.trim();
+    const errorDiv = document.getElementById('cancelModalError');
+    errorDiv.style.display = 'none';
+
+    if (!reason) {
+        errorDiv.textContent = 'Please select a reason';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    if (reason === 'other' && !note) {
+        errorDiv.textContent = 'Please tell us a bit more about why you are cancelling';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    const confirmBtn = document.getElementById('cancelConfirmBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Cancelling...';
+
+    try {
+        // ⚠️ Check this URL matches your router prefix for BookingViewSet
+        const response = await fetch(`/api/bookings/booking-groups/${cancelBookingId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Token ${API.token}`,
+                'X-CSRFToken': document.querySelector('[name=csrftoken]').getAttribute('content')
+            },
+            body: JSON.stringify({ reason, note })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.detail || Object.values(errData)[0] || 'Failed to cancel booking');
+        }
+
+        closeCancelModal();
+        loadBookings();
+        loadCurrentBookings();
+    } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Cancel Booking';
+    }
+});
+// Event listeners
+document.getElementById('saveBtn').addEventListener('click', async () => {
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    
+    if (!name.trim()) {
+        showAlert('Please enter your name', 'error');
+        return;
+    }
+    
+    try {
+        await fetch('/api/auth/profile/', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Token ${API.token}`,
+                'X-CSRFToken': document.querySelector('[name=csrftoken]').getAttribute('content')
+            },
+            body: JSON.stringify({ name, email })
+        });
+        showAlert('Profile updated successfully!', 'success');
+        loadProfile();
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Failed to update profile', 'error');
+    }
+});
+
+document.getElementById('cancelBtn').addEventListener('click', () => {
+    loadProfile();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try {
+        await API.logout();
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+    API.clearToken();
+    window.location.href = '/login';
+});
+
+document.getElementById('profileBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const dropdown = document.getElementById('profileDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+});
+
+document.addEventListener('click', () => {
+    document.getElementById('profileDropdown').style.display = 'none';
+});
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        showTab(btn.getAttribute('data-tab'));
+    });
+});
+
+// Initialize
+window.addEventListener('load', () => {
+    if (!API.token) {
+        window.location.href = '/login';
+        return;
+    }
+    
+    loadProfile();
+    
+    // Check URL params
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab) showTab(tab);
+});
+</script>
+
+</body>
+</html>

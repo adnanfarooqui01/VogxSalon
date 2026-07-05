@@ -1,3 +1,5 @@
+
+
 <div class="vlp-overlay" id="loginOverlay">
   <div class="vlp-popup" role="dialog" aria-modal="true" aria-labelledby="vlpTitle">
     <button type="button" class="vlp-close" onclick="closeLogin()" aria-label="Close">&times;</button>
@@ -45,11 +47,6 @@
           </div>
         </div>
 
-        <div class="vlp-field">
-          <label for="vlpName">Your name</label>
-          <input type="text" id="vlpName" placeholder="e.g. Priya Sharma" autocomplete="name" required>
-        </div>
-
         <button type="submit" class="vlp-btn-primary" id="verifyOtpBtn">
           <span id="verifyOtpText">Verify &amp; Login</span>
           <span id="verifyOtpLoader" class="vlp-loading" style="display:none;" aria-hidden="true"></span>
@@ -59,7 +56,6 @@
       <div class="vlp-resend-row">
         <span>Didn't receive?</span>
         <button type="button" id="resendBtn" onclick="resendOTP()">Resend OTP</button>
-        <span id="resendTimer" class="vlp-resend-timer"></span>
       </div>
       <a class="vlp-back-link" onclick="goBackToPhone()"><span>&larr; Change number</span></a>
     </div>
@@ -162,8 +158,6 @@
     border: none; background: none; color: var(--brand, #c2185b);
     font-weight: 600; font-size: 13px; cursor: pointer; padding: 0;
   }
-  .vlp-resend-row button:disabled { color: var(--gray-3, #999); cursor: not-allowed; }
-  .vlp-resend-timer { color: var(--gray-3, #999); }
   .vlp-back-link { display: block; text-align: center; margin-top: 12px; font-size: 13px; color: var(--gray-3, #999); cursor: pointer; }
 
   #recaptcha-container { margin-bottom: 2px; }
@@ -188,9 +182,6 @@
 
   let auth = null;
   let verificationId = '';
-  let currentPhone = '';           // the 10-digit number currently in this flow
-  let resendCooldownInterval = null;
-  const RESEND_COOLDOWN_SECONDS = 30; // must match the backend's cooldown (see request_otp view)
 
   /* ── lazy-load Firebase SDK (only once, even if this component ends
         up on several pages across a session) ─────────────────────── */
@@ -234,10 +225,7 @@
     document.body.style.overflow = 'hidden';
     showStep('phoneStep');
     document.getElementById('vlpPhone').value = '';
-    document.getElementById('vlpName').value = '';
     document.querySelectorAll('.vlp-otp-input').forEach(i => i.value = '');
-    stopResendCooldown();
-    currentPhone = '';
     initFirebase().catch(() => showError('Could not initialize login. Please refresh and try again.'));
     setTimeout(() => document.getElementById('vlpPhone')?.focus(), 100);
   };
@@ -245,7 +233,6 @@
   window.closeLogin = function () {
     document.getElementById('loginOverlay').classList.remove('open');
     document.body.style.overflow = '';
-    stopResendCooldown();
   };
 
   document.getElementById('loginOverlay').addEventListener('click', e => {
@@ -272,66 +259,6 @@
     el.textContent = msg; el.style.display = 'block';
   }
 
-  /* ── resend cooldown (UI-level; the real limit is enforced by the
-        backend's /api/auth/request-otp/ check below) ────────────── */
-  function startResendCooldown(seconds) {
-    stopResendCooldown();
-    const btn = document.getElementById('resendBtn');
-    const timerEl = document.getElementById('resendTimer');
-    let remaining = seconds;
-    btn.disabled = true;
-    timerEl.textContent = `Resend in ${remaining}s`;
-    resendCooldownInterval = setInterval(() => {
-      remaining -= 1;
-      if (remaining <= 0) {
-        stopResendCooldown();
-      } else {
-        timerEl.textContent = `Resend in ${remaining}s`;
-      }
-    }, 1000);
-  }
-  function stopResendCooldown() {
-    clearInterval(resendCooldownInterval);
-    resendCooldownInterval = null;
-    const btn = document.getElementById('resendBtn');
-    const timerEl = document.getElementById('resendTimer');
-    if (btn) btn.disabled = false;
-    if (timerEl) timerEl.textContent = '';
-  }
-
-  /* ── backend quota check — must pass before we ever call Firebase.
-        Caps OTPs per phone per day and enforces a minimum gap between
-        sends, so this can't be bypassed by refreshing the page or
-        editing the client-side cooldown timer. ──────────────────── */
-  async function checkOtpQuota(phone) {
-    const response = await fetch('/api/auth/request-otp/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
-      body: JSON.stringify({ phone })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const err = new Error(data.detail || 'Too many OTP requests. Please try again later.');
-      err.retryAfter = data.retry_after;
-      throw err;
-    }
-    return data;
-  }
-
-  /* ── shared send routine used by both "Send OTP" and "Resend OTP" ── */
-  async function sendOtpTo(raw) {
-    const quota = await checkOtpQuota(raw); // throws if blocked
-    const formattedPhone = '+91' + raw;
-
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
-    }
-    const confirmationResult = await auth.signInWithPhoneNumber(formattedPhone, window.recaptchaVerifier);
-    verificationId = confirmationResult.verificationId;
-    startResendCooldown(quota.cooldown_seconds || RESEND_COOLDOWN_SECONDS);
-    return formattedPhone;
-  }
-
   /* ── step 1: send OTP ─────────────────────────────────────────── */
   window.handlePhoneSubmit = async function (e) {
     e.preventDefault();
@@ -348,17 +275,16 @@
 
     try {
       clearMessages();
-      const formattedPhone = await sendOtpTo(raw);
-      currentPhone = raw;
+      const formattedPhone = '+91' + raw;
 
-      // Only prefill the name if this is the SAME phone we last logged in
-      // with on this device — otherwise a different account's name must
-      // never show up here.
-      const lastPhone = localStorage.getItem('vogx_last_phone');
-      document.getElementById('vlpName').value = (lastPhone === raw) ? (localStorage.getItem('vogx_last_name') || '') : '';
+      if (!window.recaptchaVerifier) {
+        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+      }
+
+      const confirmationResult = await auth.signInWithPhoneNumber(formattedPhone, window.recaptchaVerifier);
+      verificationId = confirmationResult.verificationId;
 
       document.getElementById('otpPhone').textContent = `Sent to ${formattedPhone}`;
-      document.querySelectorAll('.vlp-otp-input').forEach(i => i.value = '');
       showStep('otpStep');
       showSuccess('OTP sent successfully!');
       setTimeout(() => document.querySelector('.vlp-otp-input')?.focus(), 100);
@@ -381,9 +307,6 @@
     const otp = Array.from(inputs).map(i => i.value).join('');
     if (otp.length !== 6) { showError('Please enter a valid 6-digit OTP'); return; }
 
-    const name = document.getElementById('vlpName').value.trim();
-    if (!name) { showError('Please enter your name'); return; }
-
     const btn = document.getElementById('verifyOtpBtn');
     btn.disabled = true;
     document.getElementById('verifyOtpText').style.display = 'none';
@@ -398,7 +321,7 @@
       const response = await fetch('/api/auth/verify-firebase-token/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
-        body: JSON.stringify({ idToken, name })
+        body: JSON.stringify({ idToken, name: result.user.phoneNumber })
       });
 
       if (!response.ok) {
@@ -409,11 +332,6 @@
       const data = await response.json();
       if (data.token) {
         localStorage.setItem('auth_token', data.token);
-        // Remember name PER PHONE NUMBER, so logging in with a different
-        // number never shows someone else's name pre-filled.
-        localStorage.setItem('vogx_last_phone', currentPhone);
-        localStorage.setItem('vogx_last_name', data.user?.name || name);
-        stopResendCooldown();
         showSuccess('Login successful!');
 
         // let any host page react without a hard reload
@@ -440,26 +358,12 @@
   window.goBackToPhone = function () {
     showStep('phoneStep');
     document.querySelectorAll('.vlp-otp-input').forEach(i => i.value = '');
-    stopResendCooldown();
   };
 
-  /* ── resend: re-sends to the SAME number without leaving step 2,
-        and is itself gated by the backend quota check above ──────── */
-  window.resendOTP = async function () {
-    if (!currentPhone) { goBackToPhone(); return; }
-    const btn = document.getElementById('resendBtn');
-    if (btn.disabled) return; // cooldown still running
-
-    try {
-      clearMessages();
-      const formattedPhone = await sendOtpTo(currentPhone);
-      document.getElementById('otpPhone').textContent = `Sent to ${formattedPhone}`;
-      document.querySelectorAll('.vlp-otp-input').forEach(i => i.value = '');
-      showSuccess('OTP resent!');
-      setTimeout(() => document.querySelector('.vlp-otp-input')?.focus(), 100);
-    } catch (err) {
-      showError(err.message || 'Could not resend OTP. Please try again.');
-    }
+  window.resendOTP = function () {
+    goBackToPhone();
+    showSuccess("You can now request a new OTP");
+    setTimeout(() => document.getElementById('vlpPhone')?.focus(), 50);
   };
 
   /* ── OTP box auto-advance / backspace ─────────────────────────── */

@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 import logging
 
-from .models import CustomUser
+from .models import CustomUser, OTPLog
 from .serializers import (
     CustomUserSerializer,
     UserProfileSerializer,
@@ -16,8 +16,62 @@ from .firebase_service import verify_firebase_id_token
 
 logger = logging.getLogger(__name__)
 
+# OTP send limits — enforced here (server-side) rather than only in the
+# frontend's cooldown timer, since a client-side-only limit is trivial to
+# bypass by refreshing the page or editing the JS.
+MAX_OTP_PER_PHONE_PER_DAY = 50
+RESEND_COOLDOWN_SECONDS = 30
+
 
 # ==================== AUTH ENDPOINTS ====================
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def request_otp(request):
+    """
+    Gate-keeper called by the frontend right BEFORE it asks Firebase to send
+    an OTP. Firebase itself has no per-app daily cap we control, so we track
+    usage ourselves via OTPLog and refuse once a phone number has:
+      - sent more than MAX_OTP_PER_PHONE_PER_DAY OTPs today, or
+      - requested another OTP less than RESEND_COOLDOWN_SECONDS after the
+        last one.
+
+    Request body:  { "phone": "9876543210" }   (10-digit, no country code)
+    Success (200): { "allowed": true, "remaining": 3, "cooldown_seconds": 30 }
+    Blocked (429): { "detail": "...", "retry_after": 17 }
+    """
+    phone = (request.data.get('phone') or '').strip()
+    if not phone:
+        return Response({'detail': 'Phone number is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    today = timezone.localdate()
+    log, created = OTPLog.objects.get_or_create(phone=phone, date=today, defaults={'count': 0})
+
+    if not created:
+        elapsed = (timezone.now() - log.last_sent).total_seconds()
+        if elapsed < RESEND_COOLDOWN_SECONDS:
+            retry_after = int(RESEND_COOLDOWN_SECONDS - elapsed) + 1
+            return Response(
+                {'detail': f'Please wait {retry_after}s before requesting another OTP.', 'retry_after': retry_after},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+    if log.count >= MAX_OTP_PER_PHONE_PER_DAY:
+        return Response(
+            {'detail': f"You've reached today's OTP limit ({MAX_OTP_PER_PHONE_PER_DAY}). Please try again tomorrow."},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    log.count += 1
+    log.save(update_fields=['count', 'last_sent'])  # last_sent has auto_now=True
+
+    return Response({
+        'allowed': True,
+        'remaining': max(MAX_OTP_PER_PHONE_PER_DAY - log.count, 0),
+        'cooldown_seconds': RESEND_COOLDOWN_SECONDS,
+    })
+
 
 @csrf_exempt
 @api_view(['POST'])
@@ -71,19 +125,30 @@ def verify_firebase_token(request):
         if not phone.startswith('+'):
             phone = '+91' + phone.lstrip('0')
         
-        # Get or create Django user
+        # Get or create Django user.
+        # NOTE: `defaults` only applies when a NEW row is being created —
+        # it is never used to update an existing user. So the update logic
+        # below is what keeps `name` in sync on every login, not this call.
         user, created = CustomUser.objects.get_or_create(
             phone=phone,
             defaults={
-                'name': name or phone,
-                'firebase_uid': firebase_uid,  # Store Firebase UID for reference
+                'name': name or '',
+                'firebase_uid': firebase_uid,
             }
         )
-        
-        # Update Firebase UID if not already set
+
+        # Keep the profile in sync with whatever was typed in the login
+        # popup this time — this also self-heals any older account that
+        # got stuck with name == phone from before this fix.
+        update_fields = []
+        if not created and name and name != user.name:
+            user.name = name
+            update_fields.append('name')
         if not user.firebase_uid:
             user.firebase_uid = firebase_uid
-            user.save()
+            update_fields.append('firebase_uid')
+        if update_fields:
+            user.save(update_fields=update_fields)
         
         # Create or get Django auth token
         token, _ = Token.objects.get_or_create(user=user)

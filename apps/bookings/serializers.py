@@ -128,6 +128,12 @@ class BookingGroupCreateSerializer(serializers.Serializer):
     landmark = serializers.CharField(required=False, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
 
+    # Cart page collects/edits these and keeps the user's profile in sync.
+    # Phone is NEVER accepted here — it's the permanent, unique identifier
+    # set at login and can't be changed from checkout.
+    name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    email = serializers.EmailField(required=False, allow_blank=True)
+
     def validate(self, attrs):
         if attrs['booking_type'] == 'home':
             pincode = attrs.get('pincode')
@@ -136,10 +142,35 @@ class BookingGroupCreateSerializer(serializers.Serializer):
             serviceable = ServiceablePincode.objects.filter(pincode=pincode, is_active=True).first()
             if not serviceable:
                 raise serializers.ValidationError({'pincode': "Sorry, we don't currently service this pincode yet."})
+
+        # Email is mandatory at booking time — either it's already saved on
+        # the profile (from a previous booking) or the cart page must send one.
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        effective_email = (attrs.get('email') or '').strip() or (getattr(user, 'email', '') or '')
+        if not effective_email:
+            raise serializers.ValidationError({'email': 'Email is required to complete your booking.'})
+
         return attrs
 
     def create(self, validated_data):
         request = self.context.get('request')
+        user = request.user
+
+        # Sync name/email back onto the profile — same pattern as the
+        # login popup, phone is excluded/untouched on purpose.
+        name = (validated_data.pop('name', '') or '').strip()
+        email = (validated_data.pop('email', '') or '').strip()
+        update_fields = []
+        if name and name != user.name:
+            user.name = name
+            update_fields.append('name')
+        if email and email != user.email:
+            user.email = email
+            update_fields.append('email')
+        if update_fields:
+            user.save(update_fields=update_fields)
+
         service_ids = validated_data.pop('service_ids')
         services = list(Service.objects.filter(id__in=service_ids))
         if len(services) != len(service_ids):

@@ -1,754 +1,651 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}VogxSalon - Book Your Beauty Services{% endblock %}</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <style>
-        :root {
-            --brand-primary: #ff6b9d;
-            --brand-secondary: #c44569;
-            --text-primary: #2d3436;
-            --text-secondary: #636e72;
-            --text-muted: #b2bec3;
-            --border-soft: #dfe6e9;
-            --bg-light: #f5f6fa;
-            --status-success-bg: #d4edda;
-            --status-success-text: #155724;
-            --status-danger-bg: #f8d7da;
-            --status-danger-text: #721c24;
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}VOGX Salon{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,0,600;9..144,0,700;9..144,1,400;9..144,1,500;9..144,1,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── TOKENS ─────────────────────────────────────── */
+    :root {
+      --brand:        #c2185b;
+      --brand-dark:   #7a0d3a;
+      --brand-light:  #f8bbd0;
+      --brand-tint:   #fdf1f6;
+      --ink:          #14100f;
+      --ink-2:        #2b2422;
+      --black:        #14100f;
+      --gray-1:       #3d3634;
+      --gray-2:       #6b6260;
+      --gray-3:       #a49b98;
+      --gray-4:       #d8d1ce;
+      --gray-5:       #f2ede9;
+      --cream:        #faf6f2;
+      --white:        #ffffff;
+      --radius:       18px;
+      --radius-sm:    12px;
+      --radius-lg:    28px;
+      --shadow:       0 1px 2px rgba(20,16,15,.04), 0 8px 24px rgba(20,16,15,.06);
+      --shadow-md:    0 8px 28px rgba(20,16,15,.12);
+      --shadow-lg:    0 24px 60px rgba(20,16,15,.18);
+      --nav-h:        72px;
+      --max:          1240px;
+      --transition:   .25s cubic-bezier(.2,.7,.2,1);
+      --serif:        'Fraunces', ui-serif, Georgia, serif;
+      --sans:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --side-w:       320px;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    /* ── RESET ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--cream);
+      padding-top: var(--nav-h);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    img { display: block; max-width: 100%; }
+    ul { list-style: none; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            color: var(--text-primary);
-            background: #fff;
-            line-height: 1.6;
-        }
+    /* ── UTILITY ─────────────────────────────────────── */
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+    .container { max-width: var(--max); margin: 0 auto; padding: 0 clamp(16px, 3vw, 32px); }
+    .section { padding: clamp(40px, 6vw, 72px) 0; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 700; letter-spacing: .22em;
+      text-transform: uppercase; color: var(--brand);
+    }
+    .eyebrow::before { content: ""; width: 24px; height: 1px; background: currentColor; }
 
-        /* Navbar */
-        .navbar {
-            background: white;
-            border-bottom: 1px solid var(--border-soft);
-            padding: 1rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
+    /* ── NAVBAR ──────────────────────────────────────── */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: rgba(250,246,242,.78);
+      backdrop-filter: saturate(160%) blur(14px);
+      -webkit-backdrop-filter: saturate(160%) blur(14px);
+      border-bottom: 1px solid rgba(20,16,15,.06);
+      z-index: 900;
+      display: flex; align-items: center;
+    }
+    .nav__inner {
+      max-width: var(--max); margin: 0 auto;
+      padding: 0 clamp(16px, 3vw, 32px);
+      width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 20px;
+    }
+    .nav__logo {
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; height: 44px;
+    }
+    .nav__logo-img {
+      display: block;
+      max-height: 44px;
+      width: auto;
+      max-width: 140px;
+      object-fit: contain;
+      border-radius: 0;
+      background: transparent;
+    }
+    .nav__logo-text { display: none; }
 
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--brand-primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+    .nav__right { display: flex; align-items: center; gap: 12px; }
 
-        .navbar-center {
-            display: flex;
-            gap: 1.5rem;
-            align-items: center;
-            flex: 1;
-            justify-content: center;
-        }
+    .nav__cart {
+      position: relative; display: flex; align-items: center; justify-content: center;
+      width: 42px; height: 42px; border-radius: 50%;
+      transition: background var(--transition);
+    }
+    .nav__cart:hover { background: rgba(20,16,15,.06); }
+    .nav__cart svg { width: 20px; height: 20px; stroke: var(--ink); fill: none; stroke-width: 1.6; }
+    .nav__cart-badge {
+      position: absolute; top: 4px; right: 4px;
+      min-width: 18px; height: 18px; padding: 0 5px;
+      border-radius: 9px;
+      background: var(--brand); color: var(--white);
+      font-size: 10px; font-weight: 700;
+      display: none; align-items: center; justify-content: center;
+      border: 2px solid var(--cream);
+    }
+    .nav__cart-badge.visible { display: flex; }
 
-        .gender-btn {
-            padding: 0.5rem 1.5rem;
-            border: 2px solid var(--border-soft);
-            background: white;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: 600;
-            color: var(--text-secondary);
-            transition: all 0.3s ease;
-        }
+    .nav__login {
+      padding: 11px 22px; border-radius: 999px;
+      background: var(--ink); color: var(--white);
+      font-size: 13px; font-weight: 600; letter-spacing: .02em;
+      transition: background var(--transition), transform var(--transition);
+    }
+    .nav__login:hover { background: var(--brand); transform: translateY(-1px); }
 
-        .gender-btn:hover {
-            border-color: var(--brand-primary);
-            color: var(--brand-primary);
-        }
+    .nav__profile { position: relative; }
+    .nav__profile-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--brand-tint);
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition);
+    }
+    .nav__profile-btn:hover { background: var(--brand-light); }
+    .nav__profile-btn svg { width: 20px; height: 20px; stroke: var(--brand); fill: none; stroke-width: 1.8; }
+    .nav__dropdown {
+      position: absolute; top: calc(100% + 12px); right: 0;
+      min-width: 200px;
+      background: var(--white);
+      border: 1px solid var(--gray-4);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      display: none;
+      z-index: 999;
+    }
+    .nav__dropdown.open { display: block; }
+    .nav__dropdown a,
+    .nav__dropdown button {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; padding: 13px 18px;
+      font-size: 14px; color: var(--gray-1);
+      text-align: left;
+      transition: background var(--transition);
+    }
+    .nav__dropdown a:hover,
+    .nav__dropdown button:hover { background: var(--gray-5); }
+    .nav__dropdown button.logout { color: var(--brand); }
+    .nav__dropdown-divider { height: 1px; background: var(--gray-5); }
+    .nav__dropdown svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
 
-        .gender-btn.active {
-            background: var(--brand-primary);
-            border-color: var(--brand-primary);
-            color: white;
-        }
+    /* ── LOGIN / PACKAGE POPUP (shared modal shell) ──── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(20,16,15,.55);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .overlay.open { display: flex; }
+    .popup {
+      background: var(--white);
+      border-radius: var(--radius);
+      width: 100%; max-width: 400px;
+      padding: 34px 30px;
+      position: relative;
+      box-shadow: var(--shadow-lg);
+      max-height: 88vh; overflow-y: auto;
+    }
+    .popup__close {
+      position: absolute; top: 14px; right: 14px;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gray-3); font-size: 22px; line-height: 1;
+      transition: background var(--transition);
+    }
+    .popup__close:hover { background: var(--gray-5); color: var(--ink); }
+    .popup__logo {
+      text-align: center; margin-bottom: 4px;
+      font-family: var(--serif); font-style: italic;
+      font-size: 28px; font-weight: 700; color: var(--brand);
+      letter-spacing: -.02em;
+    }
+    .popup__sub { text-align: center; font-size: 13px; color: var(--gray-2); margin-bottom: 26px; }
+    .popup__step { display: none; }
+    .popup__step.active { display: block; }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 700; color: var(--gray-2);
+      margin-bottom: 8px; letter-spacing: .12em; text-transform: uppercase;
+    }
+    .field input {
+      width: 100%; padding: 14px 16px;
+      border: 1.5px solid var(--gray-4); border-radius: var(--radius-sm);
+      font-size: 15px; color: var(--ink);
+      transition: border-color var(--transition);
+      background: var(--white);
+    }
+    .field input:focus { outline: none; border-color: var(--brand); }
+    .phone-row { display: flex; gap: 8px; }
+    .phone-row .cc {
+      flex-shrink: 0; padding: 14px 14px;
+      border: 1.5px solid var(--gray-4); border-radius: var(--radius-sm);
+      font-size: 15px; color: var(--gray-2); background: var(--gray-5);
+    }
+    .phone-row input { flex: 1; }
+    .btn-primary {
+      width: 100%; padding: 15px;
+      background: var(--ink); color: var(--white);
+      border-radius: 999px; font-size: 14px; font-weight: 600; letter-spacing: .02em;
+      transition: background var(--transition), transform var(--transition);
+      margin-top: 4px;
+    }
+    .btn-primary:hover { background: var(--brand); transform: translateY(-1px); }
+    .btn-primary:disabled { background: var(--gray-4); cursor: not-allowed; transform: none; }
+    .popup__msg { font-size: 13px; text-align: center; margin-top: 12px; min-height: 18px; padding: 6px 10px; border-radius: 6px; }
+    .popup__msg.error { background: #fdecea; color: #c62828; }
+    .popup__msg.success { background: #e8f5e9; color: #2e7d32; }
+    .resend-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 13px; color: var(--gray-2); }
+    .resend-row button { color: var(--brand); font-weight: 600; font-size: 13px; }
+    .resend-row button:disabled { color: var(--gray-3); cursor: not-allowed; }
+    .back-link { display: block; text-align: center; margin-top: 14px; font-size: 13px; color: var(--gray-3); }
+    .back-link span { color: var(--brand); font-weight: 600; cursor: pointer; }
 
-        #genderToggle {
-            display: none;
-        }
+    /* ── FOOTER ──────────────────────────────────────── */
+    .footer {
+      background: var(--ink); color: rgba(255,255,255,.72);
+      padding: clamp(48px, 6vw, 72px) 0 0; margin-top: clamp(48px, 6vw, 80px);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    .footer__grid {
+      display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 40px; padding-bottom: 44px;
+    }
+    .footer__brand-logo {
+      margin-bottom: 10px; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .footer__brand-logo img {
+      display: block;
+      max-height: 48px;
+      width: auto;
+      max-width: 180px;
+      object-fit: contain;
+      border-radius: 0;
+      background: transparent;
+    }
+    .footer__tagline { font-size: 13.5px; color: rgba(255,255,255,.5); margin-bottom: 22px; line-height: 1.6; max-width: 32ch; }
+    .footer__socials { display: flex; gap: 10px; }
+    .footer__social {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,.08);
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition), transform var(--transition);
+    }
+    .footer__social:hover { background: var(--brand); transform: translateY(-2px); }
+    .footer__social svg { width: 15px; height: 15px; fill: rgba(255,255,255,.85); }
 
-        .navbar-right {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
+    .footer__col h4 { font-size: 12px; font-weight: 700; color: var(--white); margin-bottom: 18px; letter-spacing: .16em; text-transform: uppercase; }
+    .footer__col a { display: block; font-size: 13.5px; color: rgba(255,255,255,.55); margin-bottom: 12px; transition: color var(--transition); }
+    .footer__col a:hover { color: var(--brand-light); }
+    .footer__contact-item { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: rgba(255,255,255,.55); margin-bottom: 12px; }
+    .footer__contact-item svg { width: 14px; height: 14px; stroke: var(--brand-light); fill: none; stroke-width: 2; flex-shrink: 0; }
 
-        .cart-icon-container {
-            position: relative;
-            cursor: pointer;
-            font-size: 1.5rem;
-        }
+    .footer__bottom {
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding: 20px 0; text-align: center;
+      font-size: 12px; color: rgba(255,255,255,.35);
+    }
 
-        .cart-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: var(--brand-secondary);
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
+    /* ── TOAST ────────────────────────────────────────── */
+    .toast-rack {
+      position: fixed; top: calc(var(--nav-h) + 12px); right: 20px;
+      z-index: 2000; display: flex; flex-direction: column; gap: 10px;
+    }
+    .toast {
+      min-width: 240px; padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      background: var(--ink); color: var(--white);
+      font-size: 13px; font-weight: 500;
+      box-shadow: var(--shadow-md);
+      animation: toastIn .25s ease;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .toast.success { border-left: 3px solid #4caf50; }
+    .toast.error   { border-left: 3px solid #f44336; }
+    @keyframes toastIn { from { opacity:0; transform: translateX(14px); } to { opacity:1; transform: translateX(0); } }
 
-        .auth-btn {
-            padding: 0.6rem 1.5rem;
-            background: var(--brand-primary);
-            color: white;
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.3s ease;
-        }
+    /* ── SHARED RESPONSIVE (nav / footer) ────────────── */
+    @media (max-width: 768px) {
+      :root { --nav-h: 60px; }
+      body { padding-top: var(--nav-h); }
+      .nav__login { padding: 9px 16px; font-size: 12px; }
+      .nav__logo-text { font-size: 22px; }
+      .footer__grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .popup { padding: 26px 20px; }
+    }
+    @media (max-width: 480px) {
+      .footer__grid { grid-template-columns: 1fr; }
+    }
 
-        .auth-btn:hover {
-            background: var(--brand-secondary);
-        }
-
-        .profile-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--brand-primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 1.2rem;
-        }
-
-        /* Login Popup */
-        .login-popup-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-popup-overlay.active {
-            display: flex;
-        }
-
-        .login-popup {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .login-popup-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .login-popup-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .login-popup-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-muted);
-        }
-
-        .login-form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .login-form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .login-form-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-soft);
-            border-radius: var(--radius-md);
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .login-form-input:focus {
-            outline: none;
-            border-color: var(--brand-primary);
-            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
-        }
-
-        .login-error {
-            display: none;
-            background: var(--status-danger-bg);
-            color: var(--status-danger-text);
-            padding: 0.75rem;
-            border-radius: var(--radius-md);
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-        }
-
-        .login-loading {
-            display: none;
-            text-align: center;
-            padding: 1rem;
-            color: var(--text-muted);
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--brand-primary);
-            color: white;
-            border: none;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .login-btn:hover {
-            background: var(--brand-secondary);
-        }
-
-        .login-btn:disabled {
-            background: var(--text-muted);
-            cursor: not-allowed;
-        }
-
-        .resend-countdown {
-            display: none;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        .countdown {
-            font-weight: 700;
-            color: var(--brand-primary);
-        }
-
-        /* Footer */
-        footer {
-            background: var(--bg-light);
-            padding: 2rem;
-            text-align: center;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border-soft);
-            margin-top: 4rem;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-
-        main {
-            min-height: calc(100vh - 200px);
-        }
-    </style>
     {% block extra_css %}{% endblock %}
+  </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar">
-        <a href="/" class="navbar-brand">💇 VogxSalon</a>
-        
-        <div class="navbar-center">
-            <div id="genderToggle" style="display: none; gap: 1rem;">
-                <button class="gender-btn" data-gender="men">👨 Men</button>
-                <button class="gender-btn" data-gender="women">👩 Women</button>
-            </div>
+
+<!-- ═══════════════════════ NAVBAR ═══════════════════════ -->
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="nav__inner">
+
+    <a href="/" class="nav__logo" id="navLogo">
+      <img class="nav__logo-img" id="navLogoImg" src="" alt="VOGX Salon" style="display:none;">
+    </a>
+
+    <div class="nav__right">
+      <a href="cart" class="nav__cart" aria-label="Cart">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <span class="nav__cart-badge" id="cartBadge">0</span>
+      </a>
+
+      <button class="nav__login" id="loginBtn" onclick="openLogin()">Login</button>
+
+      <div class="nav__profile" id="profileArea" style="display:none;">
+        <button class="nav__profile-btn" id="profileBtn"
+                onclick="toggleDropdown()" aria-label="Profile menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </button>
+        <div class="nav__dropdown" id="profileDropdown" role="menu">
+          <a href="profile.html" role="menuitem">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            My Profile
+          </a>
+          <a href="profile.html?tab=bookings" role="menuitem">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            My Bookings
+          </a>
+          <div class="nav__dropdown-divider"></div>
+          <button class="logout" onclick="logout()" role="menuitem">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            Logout
+          </button>
         </div>
-
-        <div class="navbar-right">
-            <div class="cart-icon-container" onclick="window.location.href='/cart'">
-                🛒
-                <span class="cart-badge" id="cartBadge">0</span>
-            </div>
-            <button class="auth-btn" id="loginBtn" onclick="openLoginPopup()">Login</button>
-            <div class="profile-icon" id="profileIcon" onclick="window.location.href='/profile'" style="display: none;"></div>
-        </div>
-    </nav>
-
-    <!-- Login Popup -->
-    <div class="login-popup-overlay" id="loginPopupOverlay">
-        <div class="login-popup">
-            <div class="login-popup-header">
-                <h2 class="login-popup-title">Login</h2>
-                <button class="login-popup-close" onclick="closeLoginPopup()">✕</button>
-            </div>
-
-            <div id="loginError" class="login-error"></div>
-            <div id="loginLoading" class="login-loading">Sending OTP...</div>
-
-            <!-- Step 1: Phone Entry -->
-            <form id="phoneForm" onsubmit="submitPhoneForm(event)">
-                <div class="login-form-group">
-                    <label class="login-form-label">Phone Number</label>
-                    <input type="tel" id="phoneInput" class="login-form-input" placeholder="10-digit number" maxlength="10" required>
-                </div>
-                <button type="submit" class="login-btn">Send OTP</button>
-            </form>
-
-            <!-- Step 2: OTP Entry -->
-            <form id="otpForm" onsubmit="submitOTPForm(event)" style="display: none;">
-                <div class="login-form-group">
-                    <label class="login-form-label">OTP Code</label>
-                    <input type="text" id="otpInput" class="login-form-input" placeholder="6-digit code" maxlength="6" required>
-                </div>
-                <div class="login-form-group">
-                    <label class="login-form-label">Name (optional)</label>
-                    <input type="text" id="nameInput" class="login-form-input" placeholder="Your name">
-                </div>
-                <button type="submit" class="login-btn">Verify & Login</button>
-                <div style="text-align: center; margin-top: 1rem;">
-                    <button type="button" id="resendBtn" onclick="resendOTP()" class="login-btn" style="background: var(--text-muted);">Resend OTP</button>
-                    <div id="resendCountdown" class="resend-countdown">
-                        Resend in <span id="countdown">30</span>s
-                    </div>
-                </div>
-            </form>
-        </div>
+      </div>
     </div>
+  </div>
+</nav>
 
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+<!-- ═══════════════════════ LOGIN POPUP ═══════════════════════ -->
+{% include 'components/login_popup.html' %}
 
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 VogxSalon. All rights reserved.</p>
-    </footer>
 
-    <script>
-        // API Configuration
-        const API_BASE = '/api';
-        let api = null;
+<!-- ═══════════════════════ PAGE CONTENT ═══════════════════════ -->
+{% block content %}{% endblock %}
 
-        async function initializeAPI() {
-            if (!api) {
-                api = {
-                    token: localStorage.getItem('auth_token'),
-                    
-                    async request(endpoint, method = 'GET', data = null) {
-                        const options = {
-                            method,
-                            headers: {
-                                'Content-Type': 'application/json',
-                            }
-                        };
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <div class="footer__brand-logo">
+          <img id="footerLogoImg" src="" alt="VOGX" style="display:none;">
+        </div>
+        <p class="footer__tagline" id="footerTagline">Look Good, Feel Great.</p>
+        <div class="footer__socials">
+          <a class="footer__social" href="#" id="footerInsta" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          </a>
+          <a class="footer__social" href="#" id="footerFb" aria-label="Facebook">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </a>
+          <a class="footer__social" href="#" id="footerWa" aria-label="WhatsApp">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer__col">
+        <h4>Company</h4>
+        <a href="#">About Us</a>
+        <a href="#">Contact Us</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms & Conditions</a>
+      </div>
+      <div class="footer__col">
+        <h4>Services</h4>
+        <a href="services?gender=men">Men's Salon</a>
+        <a href="services?gender=women">Women's Salon</a>
+        <a href="services">All Services</a>
+        <a href="services">Packages</a>
+      </div>
+      <div class="footer__col" id="footerContact">
+        <h4>Contact</h4>
+        <div class="footer__contact-item">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.0 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+          <span id="footerPhone">+91 XXXXXXXXXX</span>
+        </div>
+        <div class="footer__contact-item">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span id="footerEmail">info@vogxsalon.com</span>
+        </div>
+        <div class="footer__contact-item">
+          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span id="footerAddress">Kanpur, Uttar Pradesh</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer__bottom">
+    <div class="container">
+      <p id="footerCopy">&copy; 2026 VOGX Salon. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
 
-                        if (this.token) {
-                            options.headers['Authorization'] = `Token ${this.token}`;
-                        }
+<div class="toast-rack" id="toastRack" aria-live="polite"></div>
 
-                        if (data) {
-                            options.body = JSON.stringify(data);
-                        }
+<!-- ═══════════════════════ SHARED JAVASCRIPT (available on every page) ═══════════════════════ -->
+<script>
+/* ─── CONFIG ──────────────────────────────────────────────── */
+const API = 'http://127.0.0.1:8000/api';
 
-                        const response = await fetch(`${API_BASE}${endpoint}`, options);
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.detail || errorData.message || 'Request failed');
-                        }
-                        return await response.json();
-                    },
+/* ─── AUTH HELPERS ──────────────────────────────────────── */
+function getToken()   { return localStorage.getItem('auth_token'); }
+function setToken(t)  { localStorage.setItem('auth_token', t); }
+function clearToken() { localStorage.removeItem('auth_token'); }
+function isLoggedIn() { return !!getToken(); }
 
-                    async sendOTP(phone) {
-                        return this.request('/auth/send-otp/', 'POST', { phone });
-                    },
+function authHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (getToken()) h['Authorization'] = `Token ${getToken()}`;
+  return h;
+}
 
-                    async verifyOTP(phone, otp, name) {
-                        const response = await this.request('/auth/verify-otp/', 'POST', { phone, otp, name });
-                        this.token = response.token;
-                        return response;
-                    },
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(`${API}${path}`, {
+    headers: authHeaders(), ...opts
+  });
+  const data = await res.json();
+  if (!res.ok) throw { status: res.status, data };
+  return data;
+}
 
-                    async getProfile() {
-                        return this.request('/auth/profile/', 'GET');
-                    },
+/* ─── NAVBAR AUTH STATE ──────────────────────────────────── */
+function updateNavbar() {
+  const loggedIn = isLoggedIn();
+  document.getElementById('loginBtn').style.display    = loggedIn ? 'none' : '';
+  document.getElementById('profileArea').style.display = loggedIn ? ''    : 'none';
+}
 
-                    async logout() {
-                        return this.request('/auth/logout/', 'POST');
-                    },
+function toggleDropdown() {
+  const dd = document.getElementById('profileDropdown');
+  const btn = document.getElementById('profileBtn');
+  const open = dd.classList.toggle('open');
+  btn.setAttribute('aria-expanded', open);
+}
 
-                    async getServices(page = 1, category = null, gender = null) {
-                        let url = `/services/services/?page=${page}`;
-                        if (category) url += `&category=${category}`;
-                        if (gender) url += `&gender=${gender}`;
-                        return this.request(url);
-                    },
+document.addEventListener('click', e => {
+  const area = document.getElementById('profileArea');
+  if (area && !area.contains(e.target)) {
+    document.getElementById('profileDropdown').classList.remove('open');
+    document.getElementById('profileBtn').setAttribute('aria-expanded', 'false');
+  }
+});
 
-                    async getCategories(gender = null) {
-                        let url = '/services/categories/?is_active=true';
-                        if (gender) url += `&gender=${gender}`;
-                        return this.request(url);
-                    },
+async function logout() {
+  try { await apiFetch('/auth/logout/', { method: 'POST' }); } catch {}
+  clearToken();
+  updateNavbar();
+  toast('Logged out', 'success');
+  document.getElementById('profileDropdown').classList.remove('open');
+}
 
-                    async getPackages(gender = null) {
-                        let url = '/services/packages/?is_available=true';
-                        if (gender) url += `&gender=${gender}`;
-                        return this.request(url);
-                    },
+/* ─── LOGIN POPUP ────────────────────────────────────────── */
+let _phone = '';
+let _resendTimer = null;
 
-                    async getTimeSlots(serviceId, date) {
-                        return this.request(`/bookings/time-slots/?service=${serviceId}&date=${date}`);
-                    },
+function openLogin() {
+  document.getElementById('loginOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  goToStep1();
+}
+function closeLogin() {
+  document.getElementById('loginOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  clearInterval(_resendTimer);
+}
+document.getElementById('loginOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('loginOverlay')) closeLogin();
+});
+function goToStep1() {
+  document.getElementById('step1').classList.add('active');
+  document.getElementById('step2').classList.remove('active');
+  document.getElementById('phoneInput').value = '';
+  setMsg('step1Msg', '', '');
+}
+function goToStep2() {
+  document.getElementById('step1').classList.remove('active');
+  document.getElementById('step2').classList.add('active');
+  document.getElementById('otpInput').value = '';
+  document.getElementById('nameInput').value = '';
+  setMsg('step2Msg', '', '');
+  startResendCooldown();
+  setTimeout(() => document.getElementById('otpInput').focus(), 50);
+}
+function setMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = `popup__msg ${type}`;
+}
+async function sendOtp() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!/^\d{10}$/.test(phone)) { setMsg('step1Msg', 'Enter a valid 10-digit phone number', 'error'); return; }
+  const btn = document.getElementById('sendOtpBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    await apiFetch('/auth/send-otp/', { method: 'POST', body: JSON.stringify({ phone }) });
+    _phone = phone;
+    setMsg('step1Msg', 'OTP sent!', 'success');
+    setTimeout(goToStep2, 400);
+  } catch (err) {
+    setMsg('step1Msg', err.data?.detail || 'Could not send OTP. Try again.', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Send OTP';
+  }
+}
+async function verifyOtp() {
+  const otp = document.getElementById('otpInput').value.trim();
+  const name = document.getElementById('nameInput').value.trim();
+  if (!otp) { setMsg('step2Msg', 'Enter the OTP', 'error'); return; }
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true; btn.textContent = 'Verifying…';
+  try {
+    const data = await apiFetch('/auth/verify-otp/', { method: 'POST', body: JSON.stringify({ phone: _phone, otp, name }) });
+    setToken(data.token);
+    setMsg('step2Msg', 'Login successful!', 'success');
+    clearInterval(_resendTimer);
+    setTimeout(() => {
+      closeLogin(); updateNavbar();
+      toast(`Welcome${data.user?.name ? ', ' + data.user.name : ''}!`, 'success');
+    }, 500);
+  } catch (err) {
+    setMsg('step2Msg', err.data?.detail || 'Invalid OTP. Try again.', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Verify & Login';
+  }
+}
+async function resendOtp() {
+  try {
+    await apiFetch('/auth/send-otp/', { method: 'POST', body: JSON.stringify({ phone: _phone }) });
+    setMsg('step2Msg', 'OTP resent!', 'success');
+    startResendCooldown();
+  } catch (err) {
+    setMsg('step2Msg', err.data?.detail || 'Could not resend OTP.', 'error');
+  }
+}
+function startResendCooldown() {
+  const btn = document.getElementById('resendBtn');
+  const timer = document.getElementById('resendTimer');
+  btn.disabled = true;
+  let sec = 30;
+  timer.textContent = `Resend in ${sec}s`;
+  clearInterval(_resendTimer);
+  _resendTimer = setInterval(() => {
+    sec--;
+    if (sec <= 0) { clearInterval(_resendTimer); btn.disabled = false; timer.textContent = ''; }
+    else { timer.textContent = `Resend in ${sec}s`; }
+  }, 1000);
+}
 
-                    async createBooking(bookingData) {
-                        return this.request('/bookings/bookings/', 'POST', bookingData);
-                    },
+/* ─── SALON INFO (logo / banner / footer) ───────────────── */
+async function loadSalonInfo() {
+  try {
+    const data = await apiFetch('/salon-info/?is_active=true');
+    const salon = data.results?.[0] || data;
+    if (!salon) return;
 
-                    setToken(token) {
-                        this.token = token;
-                        localStorage.setItem('auth_token', token);
-                    },
+    if (salon.logo) {
+      const img = document.getElementById('navLogoImg');
+      if (img) {
+        img.src = salon.logo;
+        img.alt = salon.name || 'VOGX Salon';
+        img.style.display = '';
+      }
+    }
 
-                    clearToken() {
-                        this.token = null;
-                        localStorage.removeItem('auth_token');
-                    }
-                };
-            }
-            return api;
-        }
+    // Hero banner only exists on pages that define it (e.g. the home page)
+    const bi = document.getElementById('heroBanner');
+    const biPh = document.getElementById('heroBannerPh');
+    if (salon.banner_image && bi) {
+      bi.src = salon.banner_image; bi.style.display = '';
+      if (biPh) biPh.style.display = 'none';
+    }
+    const heroSubEl = document.getElementById('heroSub');
+    if (salon.tagline && heroSubEl) heroSubEl.textContent = salon.tagline;
 
-        /**
-         * Update navbar auth state
-         */
-        async function updateNavbarAuthState() {
-            const token = localStorage.getItem('auth_token');
-            const loginBtn = document.getElementById('loginBtn');
-            const profileIcon = document.getElementById('profileIcon');
+    if (salon.logo) {
+      const fi = document.getElementById('footerLogoImg');
+      if (fi) {
+        fi.src = salon.logo;
+        fi.alt = salon.name || 'VOGX Salon';
+        fi.style.display = '';
+      }
+    }
+    if (salon.tagline) document.getElementById('footerTagline').textContent = salon.tagline;
+    if (salon.phone)   document.getElementById('footerPhone').textContent = salon.phone;
+    if (salon.email)   document.getElementById('footerEmail').textContent = salon.email;
+    if (salon.address) document.getElementById('footerAddress').textContent = `${salon.address}, ${salon.city || ''}`;
+    if (salon.instagram) document.getElementById('footerInsta').href = salon.instagram;
+    if (salon.facebook)  document.getElementById('footerFb').href = salon.facebook;
+    if (salon.phone)     document.getElementById('footerWa').href = `https://wa.me/${salon.phone.replace(/\D/g, '')}`;
 
-            if (!token) {
-                // Logged out
-                if (loginBtn) loginBtn.style.display = 'block';
-                if (profileIcon) profileIcon.style.display = 'none';
-            } else {
-                // Logged in
-                if (loginBtn) loginBtn.style.display = 'none';
-                if (profileIcon) {
-                    profileIcon.style.display = 'flex';
-                    try {
-                        const apiInstance = await initializeAPI();
-                        const profile = await apiInstance.getProfile();
-                        profileIcon.textContent = profile.name ? profile.name[0].toUpperCase() : '👤';
-                    } catch (error) {
-                        profileIcon.textContent = '👤';
-                    }
-                }
-            }
-        }
+    document.getElementById('footerCopy').textContent =
+      `© ${new Date().getFullYear()} ${salon.name || 'VOGX Salon'}. All rights reserved.`;
+  } catch { /* salon info optional */ }
+}
 
-        /**
-         * Open login popup
-         */
-        function openLoginPopup() {
-            const overlay = document.getElementById('loginPopupOverlay');
-            if (overlay) {
-                overlay.classList.add('active');
-                document.getElementById('phoneForm').style.display = 'block';
-                document.getElementById('otpForm').style.display = 'none';
-                document.getElementById('phoneInput').value = '';
-                document.getElementById('otpInput').value = '';
-                document.getElementById('nameInput').value = '';
-                document.getElementById('loginError').style.display = 'none';
-            }
-        }
+/* ─── TOAST ─────────────────────────────────────────────── */
+function toast(msg, type = 'success') {
+  const rack = document.getElementById('toastRack');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  rack.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
 
-        /**
-         * Close login popup
-         */
-        function closeLoginPopup() {
-            const overlay = document.getElementById('loginPopupOverlay');
-            if (overlay) {
-                overlay.classList.remove('active');
-            }
-        }
+/* ─── UTILS ─────────────────────────────────────────────── */
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+}
+</script>
 
-        /**
-         * Submit phone form
-         */
-        async function submitPhoneForm(event) {
-            event.preventDefault();
-            const phone = document.getElementById('phoneInput').value.trim();
-            const errorDiv = document.getElementById('loginError');
-            const loadingDiv = document.getElementById('loginLoading');
-            const submitBtn = document.querySelector('#phoneForm button[type="submit"]');
+{% block extra_js %}{% endblock %}
 
-            if (!/^\d{10}$/.test(phone)) {
-                errorDiv.textContent = 'Please enter a valid 10-digit phone number';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                loadingDiv.style.display = 'block';
-                errorDiv.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = true;
-
-                const apiInstance = await initializeAPI();
-                await apiInstance.sendOTP(phone);
-
-                sessionStorage.setItem('login_phone', phone);
-                document.getElementById('phoneForm').style.display = 'none';
-                document.getElementById('otpForm').style.display = 'block';
-                startResendCountdown();
-            } catch (error) {
-                errorDiv.textContent = error.message || 'Could not send OTP. Try again.';
-                errorDiv.style.display = 'block';
-            } finally {
-                loadingDiv.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = false;
-            }
-        }
-
-        /**
-         * Submit OTP form
-         */
-        async function submitOTPForm(event) {
-            event.preventDefault();
-            const phone = sessionStorage.getItem('login_phone');
-            const otp = document.getElementById('otpInput').value.trim();
-            const name = document.getElementById('nameInput').value.trim();
-            const errorDiv = document.getElementById('loginError');
-            const loadingDiv = document.getElementById('loginLoading');
-            const submitBtn = document.querySelector('#otpForm button[type="submit"]');
-
-            if (!/^\d{4,6}$/.test(otp)) {
-                errorDiv.textContent = 'Please enter a valid OTP';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                loadingDiv.style.display = 'block';
-                errorDiv.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = true;
-
-                const apiInstance = await initializeAPI();
-                const response = await apiInstance.verifyOTP(phone, otp, name);
-                
-                localStorage.setItem('auth_token', response.token);
-                updateNavbarAuthState();
-                updateCartBadge();
-                closeLoginPopup();
-
-                if (window.onLoginSuccess) {
-                    window.onLoginSuccess();
-                    window.onLoginSuccess = null;
-                }
-            } catch (error) {
-                errorDiv.textContent = error.message || 'OTP verification failed. Please try again.';
-                errorDiv.style.display = 'block';
-            } finally {
-                loadingDiv.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = false;
-            }
-        }
-
-        /**
-         * Resend OTP with cooldown
-         */
-        async function resendOTP() {
-            const phone = sessionStorage.getItem('login_phone');
-            const errorDiv = document.getElementById('loginError');
-
-            if (!phone) {
-                errorDiv.textContent = 'Session expired. Please start over.';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                const apiInstance = await initializeAPI();
-                await apiInstance.sendOTP(phone);
-                errorDiv.style.display = 'none';
-                startResendCountdown();
-            } catch (error) {
-                errorDiv.textContent = error.message || 'Could not resend OTP. Try again.';
-                errorDiv.style.display = 'block';
-            }
-        }
-
-        /**
-         * Start 30-second countdown before allowing resend
-         */
-        function startResendCountdown() {
-            let seconds = 30;
-            const resendBtn = document.getElementById('resendBtn');
-            const resendCountdown = document.getElementById('resendCountdown');
-            const countdown = document.getElementById('countdown');
-
-            if (resendBtn) resendBtn.style.display = 'none';
-            if (resendCountdown) resendCountdown.style.display = 'inline';
-
-            const interval = setInterval(() => {
-                seconds--;
-                if (countdown) countdown.textContent = seconds;
-                if (seconds <= 0) {
-                    clearInterval(interval);
-                    if (resendCountdown) resendCountdown.style.display = 'none';
-                    if (resendBtn) resendBtn.style.display = 'inline-block';
-                }
-            }, 1000);
-        }
-
-        /**
-         * Update cart badge count
-         */
-        function updateCartBadge() {
-            const cart = getCart();
-            const badge = document.getElementById('cartBadge');
-            if (badge) {
-                badge.textContent = cart.length;
-            }
-        }
-
-        /**
-         * Get cart from localStorage
-         */
-        function getCart() {
-            const cartJSON = localStorage.getItem('vogx_cart');
-            return cartJSON ? JSON.parse(cartJSON) : [];
-        }
-
-        /**
-         * Setup gender toggle buttons
-         */
-        function setupGenderToggle() {
-            const genderToggle = document.getElementById('genderToggle');
-            if (!genderToggle) return;
-
-            const isServicesPage = window.location.pathname.includes('/services');
-            if (isServicesPage) {
-                genderToggle.style.display = 'flex';
-                const buttons = genderToggle.querySelectorAll('.gender-btn');
-                buttons.forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const gender = this.dataset.gender;
-                        window.location.href = `/services?gender=${gender}`;
-                    });
-                });
-
-                const params = new URLSearchParams(window.location.search);
-                const currentGender = params.get('gender') || 'men';
-                buttons.forEach(btn => {
-                    if (btn.dataset.gender === currentGender) {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
-                });
-            }
-        }
-
-        /**
-         * Logout user
-         */
-        async function logout() {
-            try {
-                const apiInstance = await initializeAPI();
-                await apiInstance.logout();
-            } catch (error) {
-                console.log('Logout request failed:', error);
-            }
-            localStorage.removeItem('auth_token');
-            updateNavbarAuthState();
-            window.location.href = '/';
-        }
-
-        /**
-         * Login if needed (for adding to cart, etc)
-         */
-        function loginIfNeeded(callback) {
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                window.onLoginSuccess = callback;
-                openLoginPopup();
-            } else {
-                callback();
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeAPI();
-            updateNavbarAuthState();
-            updateCartBadge();
-            setupGenderToggle();
-        });
-
-        // Close popup when clicking outside
-        document.addEventListener('click', function(event) {
-            const overlay = document.getElementById('loginPopupOverlay');
-            if (event.target === overlay) {
-                closeLoginPopup();
-            }
-        });
-    </script>
-    {% block extra_js %}{% endblock %}
+<script src="{% static 'js/service-detail-modal.js' %}"></script>
 </body>
 </html>

@@ -277,6 +277,29 @@
             cursor: not-allowed;
         }
 
+        .slot-btn {
+            padding: 0.5rem 0.25rem;
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-sm);
+            background: white;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .slot-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+
+        .slot-btn.selected {
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
+            color: white;
+            font-weight: 600;
+        }
+
         .resend-countdown {
             display: none;
             text-align: center;
@@ -374,6 +397,43 @@
         </div>
     </div>
 
+    <!-- Time Slot Picker Popup -->
+    <div class="login-popup-overlay" id="timeSlotModalOverlay">
+        <div class="login-popup" style="max-width: 460px;">
+            <div class="login-popup-header">
+                <h2 class="login-popup-title">Choose Day &amp; Time</h2>
+                <button class="login-popup-close" onclick="closeTimeSlotModal()">✕</button>
+            </div>
+
+            <div class="login-form-group">
+                <label class="login-form-label">Booking Date</label>
+                <input type="date" id="modalBookingDate" class="login-form-input" onchange="onModalDateChange(this.value)">
+                <p id="modalAdvanceNote" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;">You can book today and up to the next 3 days only.</p>
+            </div>
+
+            <div class="login-form-group">
+                <label class="login-form-label">Available Time Slots</label>
+                <div id="modalSlotGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; max-height: 220px; overflow-y: auto;">
+                    <p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Pick a date to see available slots.</p>
+                </div>
+            </div>
+
+            <div id="modalSlotError" class="login-error"></div>
+
+            <button class="login-btn" id="modalConfirmSlotBtn" onclick="confirmTimeSlotSelection()" disabled>Confirm Slot</button>
+        </div>
+    </div>
+
+    <!-- Booking Confirmed Popup -->
+    <div class="login-popup-overlay" id="bookingConfirmedOverlay">
+        <div class="login-popup" style="max-width: 420px; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎉</div>
+            <h2 class="login-popup-title" style="margin-bottom: 0.75rem;">Booking Confirmed!</h2>
+            <p id="bookingConfirmedMessage" style="color: var(--text-secondary); margin-bottom: 1.5rem;"></p>
+            <button class="login-btn" onclick="closeBookingConfirmedModal()">Done</button>
+        </div>
+    </div>
+
     <main>
         <div class="container" style="padding: 2rem 1rem;">
             <h1 style="font-size: 2rem; margin-bottom: 2rem; color: var(--text-primary);">🛒 Shopping Cart</h1>
@@ -401,20 +461,32 @@
 
                         <div style="margin-bottom: 1.5rem;">
                             <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Phone Number</label>
-                            <input type="tel" id="bookingPhone" placeholder="10-digit number" maxlength="10" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                            <input type="tel" id="bookingPhone" placeholder="10-digit number" maxlength="10" disabled style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem; background: var(--bg-light); color: var(--text-muted);">
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">Used to log in — can't be changed here.</p>
                         </div>
 
                         <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Booking Date</label>
-                            <input type="date" id="bookingDate" onchange="loadAvailableTimeSlots(this.value)" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
-                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">You can book today and up to the next 3 days only.</p>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Email Address</label>
+                            <input type="email" id="bookingEmail" placeholder="Enter your email address" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">Required to complete your booking — you can update it anytime.</p>
                         </div>
 
                         <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Booking Time Slot</label>
-                            <select id="bookingTime" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem; background: white;">
-                                <option value="">Select a date first</option>
-                            </select>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Booking Slot</label>
+                            <button type="button" id="openSlotModalBtn" onclick="openTimeSlotModal()" style="width: 100%; padding: 0.75rem; text-align: left; background: white; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem; cursor: pointer; display:flex; justify-content: space-between; align-items:center;">
+                                <span id="chosenSlotLabel" style="color: var(--text-muted);">📅 Select a day &amp; time slot</span>
+                                <span style="color: var(--brand-primary); font-weight:600;">Choose &rsaquo;</span>
+                            </button>
+                            <input type="hidden" id="bookingDate">
+                            <input type="hidden" id="bookingTime">
+                            <p id="advanceBookingNote" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">You can book today and up to the next 3 days only.</p>
+                        </div>
+
+                        <div id="salonAddressFields" style="margin-bottom: 1.5rem; display: none;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">🏬 Salon Address</label>
+                            <div id="salonAddressBox" style="padding: 0.9rem 1rem; background: var(--bg-light); border-radius: 8px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">
+                                Loading salon address...
+                            </div>
                         </div>
 
                         <div id="homeAddressFields" style="margin-bottom: 1.5rem;">
@@ -454,7 +526,7 @@
                                     <input type="radio" name="serviceType" value="salon" onchange="handleServiceTypeChange()"> 🏬 Salon Visit
                                 </label>
                             </div>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">⚠️ Home visit: +₹50 extra charge</p>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">⚠️ Home visit: extra delivery charge based on your pincode</p>
                         </div>
 
                         <div style="background: var(--bg-light); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
@@ -596,6 +668,10 @@
                         return this.request('/salon-settings/');
                     },
 
+                    async getSalonInfo() {
+                        return this.request('/salon-info/?is_active=true');
+                    },
+
                     async getTimeSlots(serviceId, date) {
                         return this.request(`/bookings/time-slots/?service=${serviceId}&date=${date}&is_available=true`);
                     },
@@ -649,6 +725,37 @@
                         profileIcon.textContent = '👤';
                     }
                 }
+            }
+        }
+
+        /**
+         * Autofill the booking form's Name / Phone / Email from the user's
+         * saved profile — same data shown on the Profile page. Name and
+         * email stay editable (and get synced back to the profile on
+         * booking); phone is permanent, so the field stays disabled here.
+         */
+        async function loadBookingProfileFields() {
+            const token = localStorage.getItem('auth_token');
+            const nameEl = document.getElementById('bookingName');
+            const phoneEl = document.getElementById('bookingPhone');
+            const emailEl = document.getElementById('bookingEmail');
+            if (!nameEl || !phoneEl || !emailEl) return;
+
+            if (!token) {
+                nameEl.value = '';
+                phoneEl.value = '';
+                emailEl.value = '';
+                return;
+            }
+
+            try {
+                const apiInstance = await initializeAPI();
+                const profile = await apiInstance.getProfile();
+                nameEl.value = profile.name || '';
+                phoneEl.value = profile.phone || '';
+                emailEl.value = profile.email || '';
+            } catch (error) {
+                console.warn('Could not load profile for autofill:', error);
             }
         }
 
@@ -744,6 +851,7 @@
                 localStorage.setItem('auth_token', response.token);
                 updateNavbarAuthState();
                 updateCartBadge();
+                loadBookingProfileFields();
                 closeLoginPopup();
 
                 if (window.onLoginSuccess) {
@@ -890,6 +998,7 @@
             updateCartBadge();
             setupGenderToggle();
             setupPincodeValidation();
+            loadBookingProfileFields();
         });
 
         // Close popup when clicking outside
@@ -897,6 +1006,10 @@
             const overlay = document.getElementById('loginPopupOverlay');
             if (event.target === overlay) {
                 closeLoginPopup();
+            }
+            const slotOverlay = document.getElementById('timeSlotModalOverlay');
+            if (event.target === slotOverlay) {
+                closeTimeSlotModal();
             }
         });
 
@@ -952,12 +1065,14 @@
         /**
          * Update service charge based on service type
          */
+        let currentDeliveryCharge = 0;
+
         function updateServiceCharge() {
             const serviceTypeEl = document.querySelector('input[name="serviceType"]:checked');
             if (!serviceTypeEl) return;
-            
+
             const serviceType = serviceTypeEl.value;
-            const charge = serviceType === 'home' ? 50 : 0;
+            const charge = serviceType === 'home' ? currentDeliveryCharge : 0;
             const chargeEl = document.getElementById('serviceCharge');
             if (chargeEl) chargeEl.textContent = '₹' + charge.toFixed(2);
 
@@ -966,12 +1081,18 @@
                 homeAddressFields.style.display = serviceType === 'home' ? 'block' : 'none';
             }
 
+            const salonAddressFields = document.getElementById('salonAddressFields');
+            if (salonAddressFields) {
+                salonAddressFields.style.display = serviceType === 'salon' ? 'block' : 'none';
+                if (serviceType === 'salon') loadSalonAddress();
+            }
+
             updateOrderSummary(getCart());
         }
 
         let pincodeCheckTimeout = null;
 
-        function setPincodeStatus(message, success = false) {
+        function setPincodeStatus(message, success = false, deliveryCharge = 0) {
             const statusEl = document.getElementById('pincodeStatus');
             const confirmBtn = document.getElementById('confirmBtn');
             if (statusEl) {
@@ -981,6 +1102,54 @@
             if (confirmBtn) {
                 confirmBtn.disabled = !success && document.querySelector('input[name="serviceType"]:checked')?.value === 'home';
             }
+            currentDeliveryCharge = success ? Number(deliveryCharge) || 0 : 0;
+            updateOrderSummary(getCart());
+        }
+
+        /**
+         * Load and display the salon's address (uploaded by admin under Salon Info)
+         * for customers who choose an in-salon visit.
+         */
+        let salonInfoCache = null;
+
+        async function loadSalonAddress() {
+            const box = document.getElementById('salonAddressBox');
+            if (!box) return;
+
+            if (salonInfoCache) {
+                renderSalonAddress(salonInfoCache);
+                return;
+            }
+
+            box.textContent = 'Loading salon address...';
+            try {
+                const apiInstance = await initializeAPI();
+                const response = await apiInstance.getSalonInfo();
+                const results = Array.isArray(response) ? response : response.results || [];
+                const salon = results.find(s => s.is_active) || results[0] || null;
+
+                if (!salon) {
+                    box.textContent = 'Salon address is not available right now.';
+                    return;
+                }
+
+                salonInfoCache = salon;
+                renderSalonAddress(salon);
+            } catch (error) {
+                console.error('Could not load salon info:', error);
+                box.textContent = 'Unable to load salon address right now.';
+            }
+        }
+
+        function renderSalonAddress(salon) {
+            const box = document.getElementById('salonAddressBox');
+            if (!box) return;
+            box.innerHTML = `
+                <strong>${salon.name || 'Our Salon'}</strong><br>
+                ${salon.address || ''}<br>
+                ${salon.city || ''}${salon.city && salon.state ? ', ' : ''}${salon.state || ''} ${salon.zip_code || ''}<br>
+                ${salon.phone ? `📞 ${salon.phone}` : ''}
+            `;
         }
 
         async function validatePincodeServiceability() {
@@ -1003,7 +1172,7 @@
                 const apiInstance = await initializeAPI();
                 const result = await apiInstance.checkPincode(pincode);
                 if (result.serviceable) {
-                    setPincodeStatus(`✓ We deliver here — delivery charge ₹${parseFloat(result.delivery_charge).toFixed(2)}.`, true);
+                    setPincodeStatus(`✓ We deliver here — delivery charge ₹${parseFloat(result.delivery_charge).toFixed(2)}.`, true, result.delivery_charge);
                 } else {
                     setPincodeStatus("Sorry, we don't currently service this pincode.", false);
                 }
@@ -1020,11 +1189,6 @@
 
         function handleServiceTypeChange() {
             updateServiceCharge();
-            const bookingDate = document.getElementById('bookingDate');
-            if (bookingDate && bookingDate.value) {
-                loadAvailableTimeSlots(bookingDate.value);
-            }
-            schedulePincodeValidation();
             schedulePincodeValidation();
         }
 
@@ -1049,19 +1213,19 @@
             } catch (error) {
                 console.warn('Could not load salon settings, using defaults.', error);
             }
+
+            // Reflect the admin-configured advance-booking window wherever it's mentioned.
+            const noteText = `You can book today and up to the next ${ADVANCE_BOOKING_DAYS} day${ADVANCE_BOOKING_DAYS === 1 ? '' : 's'}. ` +
+                (MIN_BOOKING_NOTICE_HOURS > 0 ? `Same-day slots need at least ${MIN_BOOKING_NOTICE_HOURS} hour${MIN_BOOKING_NOTICE_HOURS === 1 ? '' : 's'} notice.` : '');
+            const note1 = document.getElementById('advanceBookingNote');
+            const note2 = document.getElementById('modalAdvanceNote');
+            if (note1) note1.textContent = noteText;
+            if (note2) note2.textContent = noteText;
         }
 
-        function setBookingDateMin() {
-            const bookingDate = document.getElementById('bookingDate');
-            if (!bookingDate) return;
-
-            const now = new Date();
-            const earliest = new Date(now.getTime() + MIN_BOOKING_NOTICE_HOURS * 60 * 60 * 1000);
-            bookingDate.min = earliest.toISOString().split('T')[0];
-            bookingDate.max = new Date(now.getTime() + ADVANCE_BOOKING_DAYS * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-            bookingDate.value = bookingDate.min;
-            loadAvailableTimeSlots(bookingDate.value);
-        }
+        // Booking date/time are now chosen inside the Time Slot popup
+        // (openTimeSlotModal), so there's nothing to prefill on page load.
+        function setBookingDateMin() {}
 
         function formatSlotLabel(timeValue) {
             const [hourString, minuteString] = timeValue.split(':');
@@ -1073,18 +1237,61 @@
             return `${hour}:${minute} ${ampm}`;
         }
 
-        async function loadAvailableTimeSlots(date) {
-            const bookingTime = document.getElementById('bookingTime');
-            const selectedDate = date || document.getElementById('bookingDate')?.value;
-            if (!bookingTime || !selectedDate) return;
+        function formatDateLabel(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+        }
 
-            bookingTime.disabled = true;
-            bookingTime.innerHTML = '<option value="">Loading available time slots...</option>';
+        // ── Time Slot Popup: pick a day, then pick an available time ────
+        let modalPendingTime = null; // { value, label } chosen but not yet confirmed
+
+        function openTimeSlotModal() {
+            const cart = getCart();
+            if (!cart.length) {
+                alert('Your cart is empty — add a service before choosing a slot.');
+                return;
+            }
+
+            const modalDateInput = document.getElementById('modalBookingDate');
+            const now = new Date();
+            const minDate = new Date(now.getTime());
+            const maxDate = new Date(now.getTime() + ADVANCE_BOOKING_DAYS * 24 * 60 * 60 * 1000);
+
+            modalDateInput.min = minDate.toISOString().split('T')[0];
+            modalDateInput.max = maxDate.toISOString().split('T')[0];
+
+            const existingDate = document.getElementById('bookingDate').value;
+            modalDateInput.value = existingDate || modalDateInput.min;
+
+            modalPendingTime = null;
+            document.getElementById('modalConfirmSlotBtn').disabled = true;
+            document.getElementById('modalSlotError').style.display = 'none';
+
+            document.getElementById('timeSlotModalOverlay').classList.add('active');
+            onModalDateChange(modalDateInput.value);
+        }
+
+        function closeTimeSlotModal() {
+            document.getElementById('timeSlotModalOverlay').classList.remove('active');
+        }
+
+        async function onModalDateChange(date) {
+            const grid = document.getElementById('modalSlotGrid');
+            const confirmBtn = document.getElementById('modalConfirmSlotBtn');
+            modalPendingTime = null;
+            confirmBtn.disabled = true;
+
+            if (!date) {
+                grid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Pick a date to see available slots.</p>';
+                return;
+            }
+
+            grid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Loading available slots...</p>';
 
             const cart = getCart();
             if (!cart.length) {
-                bookingTime.innerHTML = '<option value="">No cart items to choose a slot</option>';
-                bookingTime.disabled = true;
+                grid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">No cart items to choose a slot.</p>';
                 return;
             }
 
@@ -1092,34 +1299,61 @@
 
             try {
                 const apiInstance = await initializeAPI();
-                const response = await apiInstance.getTimeSlots(serviceId, selectedDate);
-                const slots = Array.isArray(response)
-                    ? response
-                    : response.results || [];
+                // The backend (TimeSlotViewSet.list) already applies the salon's
+                // min-notice-hours (for today only), advance-booking window, and
+                // max-bookings-per-slot rules — so every slot returned here is
+                // genuinely bookable.
+                const response = await apiInstance.getTimeSlots(serviceId, date);
+                const slots = Array.isArray(response) ? response : response.results || [];
 
                 if (slots.length === 0) {
-                    bookingTime.innerHTML = '<option value="">No slots available for selected date</option>';
-                    bookingTime.disabled = true;
+                    grid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">No slots available for this date.</p>';
                     return;
                 }
 
-                const options = ['<option value="">Select a time slot</option>'];
-
+                grid.innerHTML = '';
                 slots.forEach(slot => {
                     const timeValue = slot.time.includes(':00') && slot.time.split(':').length === 3
                         ? slot.time.slice(0, 5)
                         : slot.time;
-                    options.push(`<option value="${slot.time}">${formatSlotLabel(timeValue)}</option>`);
+                    const label = formatSlotLabel(timeValue);
+
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'slot-btn';
+                    btn.textContent = label;
+                    btn.onclick = () => selectModalSlot(slot.time, label, btn);
+                    grid.appendChild(btn);
                 });
-
-                bookingTime.innerHTML = options.join('');
-                bookingTime.disabled = false;
-
             } catch (error) {
-                bookingTime.innerHTML = '<option value="">Unable to load time slots</option>';
-                bookingTime.disabled = true;
+                grid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Unable to load time slots right now.</p>';
                 console.error('Time slot load error:', error);
             }
+        }
+
+        function selectModalSlot(timeValue, label, btnEl) {
+            document.querySelectorAll('#modalSlotGrid .slot-btn').forEach(b => b.classList.remove('selected'));
+            btnEl.classList.add('selected');
+            modalPendingTime = { value: timeValue, label };
+            document.getElementById('modalConfirmSlotBtn').disabled = false;
+        }
+
+        function confirmTimeSlotSelection() {
+            const date = document.getElementById('modalBookingDate').value;
+            const errorEl = document.getElementById('modalSlotError');
+
+            if (!date || !modalPendingTime) {
+                errorEl.textContent = 'Please pick both a date and a time slot.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('bookingDate').value = date;
+            document.getElementById('bookingTime').value = modalPendingTime.value;
+            document.getElementById('chosenSlotLabel').textContent = `📅 ${formatDateLabel(date)} · ⏰ ${modalPendingTime.label}`;
+            document.getElementById('chosenSlotLabel').style.color = 'var(--text-primary)';
+
+            closeTimeSlotModal();
         }
 
         /**
@@ -1157,7 +1391,7 @@
             });
 
             const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || 'home';
-            const serviceCharge = serviceType === 'home' ? 50 : 0;
+            const serviceCharge = serviceType === 'home' ? currentDeliveryCharge : 0;
             const convenienceFee = 20;
             const finalTotal = totalPrice + serviceCharge + convenienceFee;
 
@@ -1243,6 +1477,38 @@
                 rzp.open();
             });
         }
+
+        /**
+         * Show the final "Booking Confirmed" popup after payment (online or
+         * pay-later) succeeds, then reset the page back to an empty cart.
+         */
+        function showBookingConfirmedModal(group, method) {
+            const msg = method === 'online'
+                ? `Payment received — your booking for ${group.bookings.length} service(s) on ${new Date(group.booking_date).toLocaleDateString()} is confirmed.`
+                : `Your booking for ${group.bookings.length} service(s) on ${new Date(group.booking_date).toLocaleDateString()} is confirmed. You can pay after the service.`;
+            document.getElementById('bookingConfirmedMessage').textContent = msg;
+            document.getElementById('bookingConfirmedOverlay').classList.add('active');
+        }
+
+        function closeBookingConfirmedModal() {
+            document.getElementById('bookingConfirmedOverlay').classList.remove('active');
+
+            // Cart was already cleared when the booking group was created;
+            // refresh the page state so it visibly shows as empty now.
+            document.getElementById('bookingNotes').value = '';
+            document.getElementById('bookingPincode').value = '';
+            document.getElementById('bookingHouseNumber').value = '';
+            document.getElementById('bookingStreetArea').value = '';
+            document.getElementById('bookingLandmark').value = '';
+            document.getElementById('bookingDate').value = '';
+            document.getElementById('bookingTime').value = '';
+            document.getElementById('chosenSlotLabel').textContent = '📅 Select a day & time slot';
+            document.getElementById('chosenSlotLabel').style.color = 'var(--text-muted)';
+
+            displayCart();
+            updateCartBadge();
+        }
+
         /**
          * Show payment method choice modal, resolve once user completes a flow
          */
@@ -1351,15 +1617,15 @@
 
             // Validate form
             const name = document.getElementById('bookingName').value.trim();
-            const phone = document.getElementById('bookingPhone').value.trim();
+            const email = document.getElementById('bookingEmail').value.trim();
             const serviceType = document.querySelector('input[name="serviceType"]:checked').value;
 
             if (!name) {
                 alert('Please enter your name');
                 return;
             }
-            if (!phone || phone.length !== 10) {
-                alert('Please enter a valid 10-digit phone number');
+            if (!email) {
+                alert('Please enter your email address');
                 return;
             }
 
@@ -1371,12 +1637,8 @@
             const landmark = document.getElementById('bookingLandmark').value.trim();
             const notes = document.getElementById('bookingNotes').value.trim();
 
-            if (!bookingDate) {
-                alert('Please select a booking date');
-                return;
-            }
-            if (!bookingTime) {
-                alert('Please select a booking time');
+            if (!bookingDate || !bookingTime) {
+                alert('Please choose a day and time slot for your booking');
                 return;
             }
 
@@ -1403,11 +1665,20 @@
                 confirmBtn.textContent = 'Processing...';
 
                 const groupPayload = {
-                    service_ids: cart.map(item => item.id),
+                    service_ids: cart
+                        .filter(item => item.type === 'service')
+                        .map(item => item.id),
+
+                    package_ids: cart
+                        .filter(item => item.type === 'package')
+                        .map(item => item.id),
+
                     booking_date: bookingDate,
-                    booking_time: bookingTime.includes(':') && bookingTime.split(':').length === 2 ? `${bookingTime}:00` : bookingTime,
+                    booking_time: bookingTime,
                     booking_type: serviceType,
                     notes: notes,
+                    name: name,
+                    email: email
                 };
                 if (serviceType === 'home') {
                     groupPayload.pincode = pincode;

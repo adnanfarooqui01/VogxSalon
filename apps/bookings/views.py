@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
+from tokenize import group
 
 from django.utils import timezone
-from rest_framework import permissions, viewsets, status
+from rest_framework import permissions, viewsets, status, request
 from rest_framework.response import Response
 from rest_framework.decorators import action 
 
@@ -153,19 +154,40 @@ class BookingGroupViewSet(viewsets.ModelViewSet):
     ordering_fields = ['booking_date', 'created_at']
 
     def get_queryset(self):
-        queryset = BookingGroup.objects.prefetch_related('bookings__service').select_related('user', 'payment').all().order_by('-created_at')
+        queryset = BookingGroup.objects.prefetch_related(
+            'bookings__service'
+        ).select_related(
+            'user', 'payment'
+        ).all().order_by('-created_at')
+
         if not self.request.user.is_staff:
             queryset = queryset.filter(user=self.request.user)
+
         status_param = self.request.query_params.get('status')
         if status_param:
             queryset = queryset.filter(status=status_param)
+
         return queryset
 
     def create(self, request, *args, **kwargs):
-        serializer = BookingGroupCreateSerializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
+        print("REQUEST DATA:", request.data)
+
+        serializer = BookingGroupCreateSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if not serializer.is_valid():
+            print("VALIDATION ERRORS:", serializer.errors)
+            return Response(serializer.errors, status=400)
+
         group = serializer.save()
-        return Response(BookingGroupSerializer(group).data, status=status.HTTP_201_CREATED)
+
+        return Response(
+            BookingGroupSerializer(group).data,
+            status=status.HTTP_201_CREATED
+        )
+   
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
