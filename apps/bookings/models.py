@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.utils import timezone
-from apps.services.models import Service
+from apps.services.models import Service, Package
 
 User = get_user_model()
 
@@ -102,6 +102,15 @@ class Booking(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='confirmed')
     booking_type = models.CharField(max_length=10, choices=BOOKING_TYPE_CHOICES, default='salon')
 
+    group = models.ForeignKey(BookingGroup, on_delete=models.CASCADE, related_name='bookings', null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings')
+    service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name='bookings')
+    package = models.ForeignKey(
+        Package, on_delete=models.SET_NULL, related_name='bookings',
+        null=True, blank=True,
+        help_text='Set when this service-booking came from a Package rather than being booked standalone.'
+    )
+
     pincode = models.CharField(max_length=10, blank=True, null=True)
     house_number = models.CharField(max_length=50, blank=True, null=True)
     street_area = models.CharField(max_length=255, blank=True, null=True)
@@ -125,3 +134,4 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.user.name} - {self.service.name} ({self.booking_date})"
+    

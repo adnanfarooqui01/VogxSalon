@@ -1,1729 +1,1067 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrftoken" content="{{ csrf_token }}">
-    <title>{% block title %}VogxSalon - Book Your Beauty Services{% endblock %}</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <style>
-        :root {
-            --brand-primary: #ff6b9d;
-            --brand-secondary: #c44569;
-            --text-primary: #2d3436;
-            --text-secondary: #636e72;
-            --text-muted: #b2bec3;
-            --border-soft: #dfe6e9;
-            --bg-light: #f5f6fa;
-            --status-success-bg: #d4edda;
-            --status-success-text: #155724;
-            --status-danger-bg: #f8d7da;
-            --status-danger-text: #721c24;
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrftoken" content="{{ csrf_token }}">
+<title>{% block title %}Checkout · VOGX Salon{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+:root{
+  --brand:#c2185b; --brand-dark:#7a0d3a; --brand-light:#f8bbd0; --brand-tint:#fdf1f6;
+  --ink:#14100f; --ink-2:#2b2422;
+  --gray-1:#3d3634; --gray-2:#6b6260; --gray-3:#a49b98; --gray-4:#d8d1ce; --gray-5:#f2ede9;
+  --cream:#faf6f2; --white:#fff;
+  --success:#1e8a5a; --danger:#c0392b;
+  --radius:18px; --radius-sm:12px; --radius-lg:28px;
+  --shadow:0 1px 2px rgba(20,16,15,.04),0 8px 24px rgba(20,16,15,.06);
+  --shadow-md:0 8px 28px rgba(20,16,15,.12);
+  --shadow-lg:0 24px 60px rgba(20,16,15,.18);
+  --nav-h:72px; --max:1240px;
+  --transition:.25s cubic-bezier(.2,.7,.2,1);
+  --serif:'Fraunces',ui-serif,Georgia,serif;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);color:var(--ink);background:var(--cream);padding-top:var(--nav-h);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;line-height:1.55}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+img{display:block;max-width:100%}
+ul{list-style:none}
+input,textarea,select{font-family:inherit}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+.container{max-width:var(--max);margin:0 auto;padding:0 clamp(16px,3vw,32px)}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            color: var(--text-primary);
-            background: #fff;
-            line-height: 1.6;
-        }
+/* ── NAV ── */
+.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:rgba(250,246,242,.82);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid rgba(20,16,15,.06);z-index:900;display:flex;align-items:center}
+.nav__inner{max-width:var(--max);margin:0 auto;padding:0 clamp(16px,3vw,32px);width:100%;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.nav__logo{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;height:44px}
+.nav__logo-img{display:block;max-height:44px;width:auto;max-width:140px;object-fit:contain;border-radius:0;background:transparent}
+.nav__logo-text{display:none}
+.nav__logo em{font-style:italic;color:var(--brand);font-weight:500}
+.nav__right{display:flex;align-items:center;gap:12px}
+.nav__cart{position:relative;display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;transition:background var(--transition)}
+.nav__cart:hover{background:rgba(20,16,15,.06)}
+.nav__cart svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:1.6}
+.nav__cart-badge{position:absolute;top:4px;right:4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--brand);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--cream)}
+.nav__login{padding:11px 22px;border-radius:999px;background:var(--ink);color:#fff;font-size:13px;font-weight:600;letter-spacing:.02em;transition:background var(--transition),transform var(--transition)}
+.nav__login:hover{background:var(--brand);transform:translateY(-1px)}
+.nav__profile{width:40px;height:40px;border-radius:50%;background:var(--brand-tint);color:var(--brand);display:none;align-items:center;justify-content:center;font-weight:700;font-family:var(--serif);font-size:16px;cursor:pointer}
 
-        /* Navbar */
-        .navbar {
-            background: white;
-            border-bottom: 1px solid var(--border-soft);
-            padding: 1rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
+/* ── PAGE ── */
+.page{padding:clamp(24px,4vw,44px) 0 clamp(48px,6vw,80px)}
+.page__head{margin-bottom:clamp(20px,3vw,32px)}
+.page__eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--brand)}
+.page__eyebrow::before{content:"";width:24px;height:1px;background:currentColor}
+.page__title{font-family:var(--serif);font-size:clamp(30px,4.6vw,46px);font-weight:500;letter-spacing:-.02em;line-height:1.05;margin-top:8px;color:var(--ink)}
+.page__title em{font-style:italic;color:var(--brand);font-weight:400}
+.page__sub{color:var(--gray-2);font-size:14.5px;margin-top:8px}
 
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--brand-primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+.layout{display:grid;grid-template-columns:1fr 420px;gap:clamp(20px,2.4vw,32px);align-items:start}
+@media (max-width:960px){.layout{grid-template-columns:1fr}}
 
-        .navbar-center {
-            display: flex;
-            gap: 1.5rem;
-            align-items: center;
-            flex: 1;
-            justify-content: center;
-        }
+/* ── CARD (section wrapper) ── */
+.card{background:var(--white);border:1px solid var(--gray-4);border-radius:var(--radius);padding:clamp(20px,2.6vw,28px);box-shadow:var(--shadow);margin-bottom:clamp(16px,2vw,20px)}
+.card__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.card__title{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:-.01em;color:var(--ink);display:flex;align-items:center;gap:10px}
+.card__step{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-family:var(--sans);font-size:12px;font-weight:700}
 
-        .gender-btn {
-            padding: 0.5rem 1.5rem;
-            border: 2px solid var(--border-soft);
-            background: white;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: 600;
-            color: var(--text-secondary);
-            transition: all 0.3s ease;
-        }
+/* ── FORM ── */
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field__row{display:grid;gap:12px}
+.field__row.g2{grid-template-columns:1fr 1fr}
+@media (max-width:520px){.field__row.g2{grid-template-columns:1fr}}
+.label{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-2);margin-bottom:6px}
+.input,.textarea,.select{width:100%;padding:13px 14px;border:1px solid var(--gray-4);border-radius:12px;background:var(--white);font-size:15px;color:var(--ink);transition:border-color var(--transition),box-shadow var(--transition)}
+.input:focus,.textarea:focus,.select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(194,24,91,.12)}
+.input[disabled]{background:var(--gray-5);color:var(--gray-2);cursor:not-allowed}
+.textarea{min-height:90px;resize:vertical}
+.help{font-size:12.5px;color:var(--gray-2);margin-top:6px}
+.help.error{color:var(--danger)}
+.help.ok{color:var(--success)}
 
-        .gender-btn:hover {
-            border-color: var(--brand-primary);
-            color: var(--brand-primary);
-        }
+/* ── SEGMENTED (Home / Salon) ── */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg__opt{border:1.5px solid var(--gray-4);border-radius:14px;padding:16px 14px;background:var(--white);cursor:pointer;display:flex;gap:12px;align-items:flex-start;transition:border-color var(--transition),background var(--transition),box-shadow var(--transition)}
+.seg__opt:hover{border-color:var(--brand-light)}
+.seg__opt.active{border-color:var(--brand);background:var(--brand-tint);box-shadow:0 6px 18px rgba(194,24,91,.12)}
+.seg__radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--gray-3);flex-shrink:0;margin-top:2px;position:relative;transition:border-color var(--transition)}
+.seg__opt.active .seg__radio{border-color:var(--brand)}
+.seg__opt.active .seg__radio::after{content:"";position:absolute;inset:3px;background:var(--brand);border-radius:50%}
+.seg__body{min-width:0}
+.seg__t{font-weight:700;font-size:15px;color:var(--ink);margin-bottom:2px}
+.seg__d{font-size:12.5px;color:var(--gray-2);line-height:1.45}
 
-        .gender-btn.active {
-            background: var(--brand-primary);
-            border-color: var(--brand-primary);
-            color: white;
-        }
+/* ── DAY CHIPS (time slot) ── */
+.days{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media (max-width:520px){.days{grid-template-columns:repeat(2,1fr)}}
+.day{border:1.5px solid var(--gray-4);border-radius:12px;padding:12px 10px;background:var(--white);text-align:center;cursor:pointer;transition:all var(--transition)}
+.day:hover{border-color:var(--brand-light)}
+.day.active{border-color:var(--brand);background:var(--brand);color:#fff;box-shadow:0 6px 18px rgba(194,24,91,.22)}
+.day__dow{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.day__num{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1.1;margin:2px 0}
+.day__mon{font-size:11.5px;opacity:.75;text-transform:uppercase;letter-spacing:.08em}
 
-        #genderToggle {
-            display: none;
-        }
+.slots-label{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-2);margin-bottom:8px}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:520px){.slots{grid-template-columns:repeat(3,1fr)}}
+.slot{padding:10px 6px;border:1px solid var(--gray-4);border-radius:10px;background:var(--white);font-size:13.5px;font-weight:500;color:var(--ink);cursor:pointer;text-align:center;transition:all var(--transition)}
+.slot:hover{border-color:var(--brand);color:var(--brand)}
+.slot.active{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.slots-empty{grid-column:1/-1;padding:20px;text-align:center;color:var(--gray-3);font-size:13.5px}
 
-        .navbar-right {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
+/* ── PAYMENT METHODS ── */
+.pm{border:1.5px solid var(--gray-4);border-radius:14px;padding:0;overflow:hidden;margin-bottom:12px}
+.pm__opt{display:flex;align-items:center;gap:12px;padding:16px 16px;cursor:pointer;transition:background var(--transition)}
+.pm__opt+.pm__opt{border-top:1px solid var(--gray-5)}
+.pm__opt.active{background:var(--brand-tint)}
+.pm__radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--gray-3);flex-shrink:0;position:relative;transition:border-color var(--transition)}
+.pm__opt.active .pm__radio{border-color:var(--brand)}
+.pm__opt.active .pm__radio::after{content:"";position:absolute;inset:3px;background:var(--brand);border-radius:50%}
+.pm__label{flex:1;font-weight:600;font-size:14.5px;color:var(--ink);min-width:0}
+.pm__sub{display:block;font-weight:400;font-size:12px;color:var(--gray-2);margin-top:2px}
+.pm__logos{display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.pm__logo{height:22px;width:auto;border:1px solid var(--gray-4);border-radius:4px;background:#fff;padding:2px 4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;letter-spacing:.02em;color:var(--ink)}
+.pm__logo img{height:16px;width:auto;display:block}
+.pm__logo.more{background:var(--gray-5);color:var(--gray-2);font-weight:700}
+.pm__info{padding:14px 16px;background:var(--gray-5);color:var(--gray-2);font-size:13px;border-top:1px solid var(--gray-4)}
 
-        .cart-icon-container {
-            position: relative;
-            cursor: pointer;
-            font-size: 1.5rem;
-        }
+/* ── SIDEBAR: items & bill ── */
+.aside{position:sticky;top:calc(var(--nav-h) + 16px)}
+@media (max-width:960px){.aside{position:static}}
 
-        .cart-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: var(--brand-secondary);
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
+.items{background:var(--white);border:1px solid var(--gray-4);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.items__head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--gray-5)}
+.items__title{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--ink)}
+.items__cxl{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--brand);letter-spacing:.04em;background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background var(--transition)}
+.items__cxl:hover{background:var(--brand-tint)}
+.items__cxl .i{width:16px;height:16px;border-radius:50%;background:var(--brand-tint);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:700;font-style:italic;font-size:11px}
+.item{display:flex;gap:14px;padding:14px 20px;border-bottom:1px solid var(--gray-5)}
+.item:last-child{border-bottom:none}
+.item__thumb{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--brand-tint),var(--brand-light));flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.item__thumb svg{width:24px;height:24px;stroke:var(--brand);fill:none;stroke-width:1.6}
+.item__qtybadge{position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--ink);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--white)}
+.item__body{flex:1;min-width:0}
+.item__name{font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.35;margin-bottom:4px}
+.item__row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.item__qty{display:inline-flex;align-items:center;border:1px solid var(--gray-4);border-radius:999px;overflow:hidden}
+.item__qtybtn{width:26px;height:26px;background:none;color:var(--ink);font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
+.item__qtybtn:hover{background:var(--gray-5)}
+.item__qtynum{min-width:24px;text-align:center;font-size:13px;font-weight:700;color:var(--ink)}
+.item__price{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--ink)}
+.item__rm{background:none;color:var(--gray-3);font-size:12px;font-weight:500;padding:0}
+.item__rm:hover{color:var(--danger)}
 
-        .auth-btn {
-            padding: 0.6rem 1.5rem;
-            background: var(--brand-primary);
-            color: white;
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.3s ease;
-        }
+.bill{background:var(--white);border:1px solid var(--gray-4);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+.bill__title{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--ink);margin-bottom:14px}
+.bill__row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:14px;color:var(--gray-1)}
+.bill__row strong{font-weight:600;color:var(--ink)}
+.bill__sep{height:1px;background:var(--gray-5);margin:8px 0}
+.bill__total{display:flex;justify-content:space-between;align-items:baseline;padding-top:8px;font-family:var(--serif);font-size:22px;font-weight:600;color:var(--ink)}
+.bill__total-cur{font-size:12px;letter-spacing:.14em;color:var(--gray-2);text-transform:uppercase;font-family:var(--sans);font-weight:700;margin-right:4px}
+.bill__note{font-size:11.5px;color:var(--gray-3);margin-top:10px;line-height:1.5}
 
-        .auth-btn:hover {
-            background: var(--brand-secondary);
-        }
+/* ── SUBMIT ── */
+.submit{width:100%;padding:16px 20px;background:var(--ink);color:#fff;border-radius:999px;font-size:15px;font-weight:700;letter-spacing:.02em;transition:background var(--transition),transform var(--transition);display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.submit:hover:not([disabled]){background:var(--brand);transform:translateY(-1px)}
+.submit[disabled]{opacity:.5;cursor:not-allowed}
+.submit svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
 
-        .profile-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--brand-primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 1.2rem;
-        }
+.policies{margin-top:18px;display:flex;flex-wrap:wrap;gap:6px 22px;justify-content:center;font-size:13px}
+.policies a{color:var(--brand);text-decoration:underline;text-decoration-color:rgba(194,24,91,.35);text-underline-offset:3px;transition:color var(--transition)}
+.policies a:hover{color:var(--brand-dark)}
 
-        /* Login Popup */
-        .login-popup-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
+/* ── EMPTY ── */
+.empty{background:var(--white);border:1px dashed var(--gray-4);border-radius:var(--radius);padding:48px 24px;text-align:center}
+.empty__icon{width:64px;height:64px;border-radius:50%;background:var(--brand-tint);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.empty__icon svg{width:28px;height:28px;stroke:var(--brand);fill:none;stroke-width:1.6}
+.empty__title{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.empty__sub{color:var(--gray-2);font-size:14px;margin-bottom:20px}
+.empty__cta{display:inline-flex;padding:12px 24px;background:var(--ink);color:#fff;border-radius:999px;font-size:14px;font-weight:600;transition:background var(--transition)}
+.empty__cta:hover{background:var(--brand)}
 
-        .login-popup-overlay.active {
-            display: flex;
-        }
+/* ── SALON ADDRESS BOX ── */
+.salon-addr{padding:14px 16px;background:var(--brand-tint);border:1px solid var(--brand-light);border-radius:12px;font-size:14px;color:var(--ink-2);line-height:1.55}
+.salon-addr strong{display:block;font-family:var(--serif);font-size:16px;color:var(--ink);margin-bottom:4px}
 
-        .login-popup {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            animation: slideUp 0.3s ease;
-        }
+/* ── MODAL ── */
+.modal{position:fixed;inset:0;background:rgba(20,16,15,.55);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.open{display:flex}
+.modal__box{background:var(--white);border-radius:var(--radius);max-width:440px;width:100%;box-shadow:var(--shadow-lg);padding:28px;position:relative;animation:pop .25s ease}
+.modal__box.wide{max-width:560px}
+@keyframes pop{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal__close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:var(--gray-5);color:var(--ink);font-size:18px;display:flex;align-items:center;justify-content:center;transition:background var(--transition)}
+.modal__close:hover{background:var(--gray-4)}
+.modal__title{font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:-.01em;margin-bottom:6px;color:var(--ink)}
+.modal__sub{font-size:13.5px;color:var(--gray-2);margin-bottom:18px}
+.modal__err{background:#fdecea;color:var(--danger);padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:12px;display:none}
+.modal__err.show{display:block}
 
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
+/* Login popup form styles reuse .input/.submit */
+.otp-resend{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;font-size:13px;color:var(--gray-2)}
+.otp-resend button{color:var(--brand);font-weight:600}
 
-        .login-popup-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
+/* ── TOAST ── */
+.toast-rack{position:fixed;top:calc(var(--nav-h) + 12px);right:20px;z-index:2000;display:flex;flex-direction:column;gap:10px}
+.toast{min-width:240px;padding:12px 16px;border-radius:10px;background:var(--ink);color:#fff;font-size:13px;font-weight:500;box-shadow:var(--shadow-md);animation:tin .22s ease;border-left:3px solid var(--brand)}
+.toast.ok{border-left-color:#4caf50}
+.toast.err{border-left-color:#f44336}
+@keyframes tin{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:translateX(0)}}
 
-        .login-popup-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
+/* ── FOOTER ── */
+.footer{background:var(--ink);color:rgba(255,255,255,.72);padding:clamp(48px,6vw,72px) 0 0;margin-top:clamp(48px,6vw,80px);border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.footer__grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px;padding-bottom:44px}
+@media (max-width:768px){.footer__grid{grid-template-columns:1fr 1fr;gap:32px}}
+@media (max-width:480px){.footer__grid{grid-template-columns:1fr}}
+.footer__brand-logo{margin-bottom:10px;display:inline-flex;align-items:center;justify-content:center}
+.footer__brand-logo img{display:block;max-height:48px;width:auto;max-width:180px;object-fit:contain;border-radius:0;background:transparent}
+.footer__tagline{font-size:13.5px;color:rgba(255,255,255,.5);margin-bottom:22px;line-height:1.6;max-width:32ch}
+.footer__socials{display:flex;gap:10px}
+.footer__social{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;transition:background var(--transition),transform var(--transition)}
+.footer__social:hover{background:var(--brand);transform:translateY(-2px)}
+.footer__social svg{width:15px;height:15px;fill:rgba(255,255,255,.85)}
+.footer__col h4{font-size:12px;font-weight:700;color:#fff;margin-bottom:18px;letter-spacing:.16em;text-transform:uppercase}
+.footer__col a{display:block;font-size:13.5px;color:rgba(255,255,255,.55);margin-bottom:12px;transition:color var(--transition)}
+.footer__col a:hover{color:var(--brand-light)}
+.footer__contact-item{display:flex;align-items:center;gap:10px;font-size:13.5px;color:rgba(255,255,255,.55);margin-bottom:12px}
+.footer__contact-item svg{width:14px;height:14px;stroke:var(--brand-light);fill:none;stroke-width:2;flex-shrink:0}
+.footer__bottom{border-top:1px solid rgba(255,255,255,.08);padding:20px 0;text-align:center;font-size:12px;color:rgba(255,255,255,.35)}
 
-        .login-popup-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-muted);
-        }
-
-        .login-form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .login-form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .login-form-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-soft);
-            border-radius: var(--radius-md);
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .login-form-input:focus {
-            outline: none;
-            border-color: var(--brand-primary);
-            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
-        }
-
-        .login-error {
-            display: none;
-            background: var(--status-danger-bg);
-            color: var(--status-danger-text);
-            padding: 0.75rem;
-            border-radius: var(--radius-md);
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-        }
-
-        .login-loading {
-            display: none;
-            text-align: center;
-            padding: 1rem;
-            color: var(--text-muted);
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--brand-primary);
-            color: white;
-            border: none;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .login-btn:hover {
-            background: var(--brand-secondary);
-        }
-
-        .login-btn:disabled {
-            background: var(--text-muted);
-            cursor: not-allowed;
-        }
-
-        .slot-btn {
-            padding: 0.5rem 0.25rem;
-            border: 1px solid var(--border-soft);
-            border-radius: var(--radius-sm);
-            background: white;
-            color: var(--text-primary);
-            font-size: 0.85rem;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        .slot-btn:hover {
-            border-color: var(--brand-primary);
-            color: var(--brand-primary);
-        }
-
-        .slot-btn.selected {
-            background: var(--brand-primary);
-            border-color: var(--brand-primary);
-            color: white;
-            font-weight: 600;
-        }
-
-        .resend-countdown {
-            display: none;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        .countdown {
-            font-weight: 700;
-            color: var(--brand-primary);
-        }
-
-        /* Footer */
-        footer {
-            background: var(--bg-light);
-            padding: 2rem;
-            text-align: center;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border-soft);
-            margin-top: 4rem;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-
-        main {
-            min-height: calc(100vh - 200px);
-        }
-    </style>
-    {% block extra_css %}{% endblock %}
+/* ── mobile refinements ── */
+@media (max-width:768px){
+  :root{--nav-h:60px}
+  .nav__login{padding:9px 16px;font-size:12px}
+  .nav__logo{font-size:20px}
+  .card{padding:20px 16px}
+  .aside .items,.aside .bill{border-radius:16px}
+}
+</style>
+{% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar">
-        <a href="/" class="navbar-brand">💇 VogxSalon</a>
-        
-        <div class="navbar-center">
-            <div id="genderToggle" style="display: none; gap: 1rem;">
-                <button class="gender-btn" data-gender="men">👨 Men</button>
-                <button class="gender-btn" data-gender="women">👩 Women</button>
-            </div>
+
+<!-- NAV -->
+<!-- ═══════════════════════ NAVBAR ═══════════════════════ -->
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="nav__inner">
+
+    <a href="/" class="nav__logo" id="navLogo">
+      <img class="nav__logo-img" id="navLogoImg" src="" alt="VOGX Salon" style="display:none;">
+    </a>
+
+    <div class="nav__right">
+      <a href="cart" class="nav__cart" aria-label="Cart">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <span class="nav__cart-badge" id="cartBadge">0</span>
+      </a>
+
+      <button class="nav__login" id="loginBtn" onclick="openLogin()">Login</button>
+
+      <div class="nav__profile" id="profileArea" style="display:none;">
+        <button class="nav__profile-btn" id="profileBtn"
+                onclick="toggleDropdown()" aria-label="Profile menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </button>
+        <div class="nav__dropdown" id="profileDropdown" role="menu">
+          <a href="profile" role="menuitem">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            My Profile
+          </a>
+          <a href="profile.html?tab=bookings" role="menuitem">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            My Bookings
+          </a>
+          <div class="nav__dropdown-divider"></div>
+          <button class="logout" onclick="logout()" role="menuitem">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            Logout
+          </button>
         </div>
-
-        <div class="navbar-right">
-            <div class="cart-icon-container" onclick="window.location.href='/cart'">
-                🛒
-                <span class="cart-badge" id="cartBadge">0</span>
-            </div>
-            <button class="auth-btn" id="loginBtn" onclick="openLoginPopup()">Login</button>
-            <div class="profile-icon" id="profileIcon" onclick="window.location.href='/profile'" style="display: none;"></div>
-        </div>
-    </nav>
-
-    <!-- Login Popup -->
-    <div class="login-popup-overlay" id="loginPopupOverlay">
-        <div class="login-popup">
-            <div class="login-popup-header">
-                <h2 class="login-popup-title">Login</h2>
-                <button class="login-popup-close" onclick="closeLoginPopup()">✕</button>
-            </div>
-
-            <div id="loginError" class="login-error"></div>
-            <div id="loginLoading" class="login-loading">Sending OTP...</div>
-
-            <!-- Step 1: Phone Entry -->
-            <form id="phoneForm" onsubmit="submitPhoneForm(event)">
-                <div class="login-form-group">
-                    <label class="login-form-label">Phone Number</label>
-                    <input type="tel" id="phoneInput" class="login-form-input" placeholder="10-digit number" maxlength="10" required>
-                </div>
-                <button type="submit" class="login-btn">Send OTP</button>
-            </form>
-
-            <!-- Step 2: OTP Entry -->
-            <form id="otpForm" onsubmit="submitOTPForm(event)" style="display: none;">
-                <div class="login-form-group">
-                    <label class="login-form-label">OTP Code</label>
-                    <input type="text" id="otpInput" class="login-form-input" placeholder="6-digit code" maxlength="6" required>
-                </div>
-                <div class="login-form-group">
-                    <label class="login-form-label">Name (optional)</label>
-                    <input type="text" id="nameInput" class="login-form-input" placeholder="Your name">
-                </div>
-                <button type="submit" class="login-btn">Verify & Login</button>
-                <div style="text-align: center; margin-top: 1rem;">
-                    <button type="button" id="resendBtn" onclick="resendOTP()" class="login-btn" style="background: var(--text-muted);">Resend OTP</button>
-                    <div id="resendCountdown" class="resend-countdown">
-                        Resend in <span id="countdown">30</span>s
-                    </div>
-                </div>
-            </form>
-        </div>
+      </div>
     </div>
+  </div>
+</nav>
 
-    <!-- Time Slot Picker Popup -->
-    <div class="login-popup-overlay" id="timeSlotModalOverlay">
-        <div class="login-popup" style="max-width: 460px;">
-            <div class="login-popup-header">
-                <h2 class="login-popup-title">Choose Day &amp; Time</h2>
-                <button class="login-popup-close" onclick="closeTimeSlotModal()">✕</button>
-            </div>
+<!-- ═══════════════════════ LOGIN POPUP ═══════════════════════ -->
+{% include 'components/login_popup.html' %}
 
-            <div class="login-form-group">
-                <label class="login-form-label">Booking Date</label>
-                <input type="date" id="modalBookingDate" class="login-form-input" onchange="onModalDateChange(this.value)">
-                <p id="modalAdvanceNote" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;">You can book today and up to the next 3 days only.</p>
-            </div>
 
-            <div class="login-form-group">
-                <label class="login-form-label">Available Time Slots</label>
-                <div id="modalSlotGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; max-height: 220px; overflow-y: auto;">
-                    <p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Pick a date to see available slots.</p>
-                </div>
-            </div>
 
-            <div id="modalSlotError" class="login-error"></div>
-
-            <button class="login-btn" id="modalConfirmSlotBtn" onclick="confirmTimeSlotSelection()" disabled>Confirm Slot</button>
-        </div>
-    </div>
-
-    <!-- Booking Confirmed Popup -->
-    <div class="login-popup-overlay" id="bookingConfirmedOverlay">
-        <div class="login-popup" style="max-width: 420px; text-align: center;">
-            <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎉</div>
-            <h2 class="login-popup-title" style="margin-bottom: 0.75rem;">Booking Confirmed!</h2>
-            <p id="bookingConfirmedMessage" style="color: var(--text-secondary); margin-bottom: 1.5rem;"></p>
-            <button class="login-btn" onclick="closeBookingConfirmedModal()">Done</button>
-        </div>
-    </div>
-
-    <main>
-        <div class="container" style="padding: 2rem 1rem;">
-            <h1 style="font-size: 2rem; margin-bottom: 2rem; color: var(--text-primary);">🛒 Shopping Cart</h1>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                <!-- Cart Items -->
-                <div>
-                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-primary);">📋 Items</h2>
-                    <div id="cartItemsContainer" style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-soft); overflow: hidden; margin-bottom: 2rem;">
-                        <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
-                            Loading cart items...
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Booking Details Form -->
-                <div id="bookingDetailsWrapper" style="display: none;">
-                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-primary);">📝 Booking Details</h2>
-                    <div style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-soft); padding: 1.5rem;">
-                        
-                        <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Full Name</label>
-                            <input type="text" id="bookingName" placeholder="Enter your name" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
-                        </div>
-
-                        <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Phone Number</label>
-                            <input type="tel" id="bookingPhone" placeholder="10-digit number" maxlength="10" disabled style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem; background: var(--bg-light); color: var(--text-muted);">
-                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">Used to log in — can't be changed here.</p>
-                        </div>
-
-                        <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Email Address</label>
-                            <input type="email" id="bookingEmail" placeholder="Enter your email address" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
-                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">Required to complete your booking — you can update it anytime.</p>
-                        </div>
-
-                        <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Booking Slot</label>
-                            <button type="button" id="openSlotModalBtn" onclick="openTimeSlotModal()" style="width: 100%; padding: 0.75rem; text-align: left; background: white; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem; cursor: pointer; display:flex; justify-content: space-between; align-items:center;">
-                                <span id="chosenSlotLabel" style="color: var(--text-muted);">📅 Select a day &amp; time slot</span>
-                                <span style="color: var(--brand-primary); font-weight:600;">Choose &rsaquo;</span>
-                            </button>
-                            <input type="hidden" id="bookingDate">
-                            <input type="hidden" id="bookingTime">
-                            <p id="advanceBookingNote" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">You can book today and up to the next 3 days only.</p>
-                        </div>
-
-                        <div id="salonAddressFields" style="margin-bottom: 1.5rem; display: none;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">🏬 Salon Address</label>
-                            <div id="salonAddressBox" style="padding: 0.9rem 1rem; background: var(--bg-light); border-radius: 8px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">
-                                Loading salon address...
-                            </div>
-                        </div>
-
-                        <div id="homeAddressFields" style="margin-bottom: 1.5rem;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                                <div>
-                                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Pincode</label>
-                                    <input type="text" id="bookingPincode" placeholder="Enter pincode" maxlength="10" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
-                                    <div id="pincodeStatus" style="margin-top: 0.5rem; font-size: 0.9rem;"></div>
-                                </div>
-                                <div>
-                                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">House / Flat No.</label>
-                                    <input type="text" id="bookingHouseNumber" placeholder="House / Flat No." maxlength="50" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
-                                </div>
-                            </div>
-                            <div style="margin-bottom: 1rem;">
-                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Street / Area</label>
-                                <input type="text" id="bookingStreetArea" placeholder="Street, area or landmark" maxlength="255" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
-                            </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Landmark</label>
-                                <input type="text" id="bookingLandmark" placeholder="Optional landmark" maxlength="255" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem;">
-                            </div>
-                        </div>
-
-                        <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Notes</label>
-                            <textarea id="bookingNotes" placeholder="Additional preferences or instructions" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-soft); border-radius: 8px; font-size: 0.95rem; min-height: 80px; resize: vertical;"></textarea>
-                        </div>
-
-                        <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-primary);">Service Type</label>
-                            <div style="display: flex; gap: 1rem;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                    <input type="radio" name="serviceType" value="home" checked onchange="handleServiceTypeChange()"> 🏠 Home Service
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                    <input type="radio" name="serviceType" value="salon" onchange="handleServiceTypeChange()"> 🏬 Salon Visit
-                                </label>
-                            </div>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">⚠️ Home visit: extra delivery charge based on your pincode</p>
-                        </div>
-
-                        <div style="background: var(--bg-light); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                            <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
-                                <span style="color: var(--text-secondary);">Items Total:</span>
-                                <span id="summarySubtotal" style="font-weight: 600;">₹0.00</span>
-                            </div>
-                            <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
-                                <span style="color: var(--text-secondary);">Service Charge:</span>
-                                <span id="serviceCharge" style="font-weight: 600;">₹0.00</span>
-                            </div>
-                            <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
-                                <span style="color: var(--text-secondary);">Convenience Fee:</span>
-                                <span id="convenienceFee" style="font-weight: 600;">₹20.00</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); padding-top: 0.75rem; border-top: 1px solid var(--border-soft);">
-                                <span>Total Amount:</span>
-                                <span id="summaryTotal">₹0.00</span>
-                            </div>
-                        </div>
-
-                        <button id="confirmBtn" style="width: 100%; padding: 0.75rem; background: var(--brand-primary); color: white; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; font-size: 1rem; transition: background 0.3s ease;" onclick="confirmBooking()">
-                            ✓ Confirm Booking
-                        </button>
-
-                        <button style="width: 100%; padding: 0.75rem; background: transparent; color: var(--brand-primary); border: 2px solid var(--brand-primary); border-radius: var(--radius-md); font-weight: 600; cursor: pointer; font-size: 1rem; margin-top: 0.75rem;" onclick="window.location.href='/services'">
-                            Continue Shopping
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    {% block content %}{% endblock %}
-
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 VogxSalon. All rights reserved.</p>
-    </footer>
-
-    <script>
-        // API Configuration
-        const API_BASE = '/api';
-        let ADVANCE_BOOKING_DAYS = 3;
-        let MIN_BOOKING_NOTICE_HOURS = 0;
-        let api = null;
-
-        async function initializeAPI() {
-            const token = localStorage.getItem('auth_token');
-            if (!api) {
-                api = {
-                    token,
-
-                    getCSRFToken() {
-                        const meta = document.querySelector('[name=csrftoken]');
-                        if (meta) return meta.getAttribute('content');
-                        const cookies = document.cookie.split(';');
-                        for (const cookie of cookies) {
-                            const [name, value] = cookie.trim().split('=');
-                            if (name === 'csrftoken') return value;
-                        }
-                        return null;
-                    },
-
-                    async request(endpoint, method = 'GET', data = null) {
-                        const options = {
-                            method,
-                            headers: {
-                                'Content-Type': 'application/json',
-                            }
-                        };
-
-                        if (this.token) {
-                            options.headers['Authorization'] = `Token ${this.token}`;
-                        }
-
-                        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
-                            const csrfToken = this.getCSRFToken();
-                            if (csrfToken) {
-                                options.headers['X-CSRFToken'] = csrfToken;
-                            }
-                        }
-
-                        if (data) {
-                            options.body = JSON.stringify(data);
-                        }
-
-                        const response = await fetch(`${API_BASE}${endpoint}`, options);
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.detail || errorData.message || 'Request failed');
-                        }
-                        return await response.json();
-                    },
-
-                    async sendOTP(phone) {
-                        return this.request('/auth/send-otp/', 'POST', { phone });
-                    },
-
-                    async verifyOTP(phone, otp, name) {
-                        const response = await this.request('/auth/verify-otp/', 'POST', { phone, otp, name });
-                        this.token = response.token;
-                        return response;
-                    },
-
-                    async getProfile() {
-                        return this.request('/auth/profile/', 'GET');
-                    },
-
-                    async logout() {
-                        return this.request('/auth/logout/', 'POST');
-                    },
-
-                    async getServices(page = 1, category = null, gender = null) {
-                        let url = `/services/services/?page=${page}`;
-                        if (category) url += `&category=${category}`;
-                        if (gender) url += `&gender=${gender}`;
-                        return this.request(url);
-                    },
-
-                    async getCategories(gender = null) {
-                        let url = '/services/categories/?is_active=true';
-                        if (gender) url += `&gender=${gender}`;
-                        return this.request(url);
-                    },
-
-                    async getPackages(gender = null) {
-                        let url = '/services/packages/?is_available=true';
-                        if (gender) url += `&gender=${gender}`;
-                        return this.request(url);
-                    },
-
-                    async getWorkingHours(day) {
-                        return this.request(`/working-hours/?day=${day}`);
-                    },
-
-                    async getSalonSettings() {
-                        return this.request('/salon-settings/');
-                    },
-
-                    async getSalonInfo() {
-                        return this.request('/salon-info/?is_active=true');
-                    },
-
-                    async getTimeSlots(serviceId, date) {
-                        return this.request(`/bookings/time-slots/?service=${serviceId}&date=${date}&is_available=true`);
-                    },
-
-                    async checkPincode(pincode) {
-                        return this.request(`/check-pincode/?pincode=${encodeURIComponent(pincode)}`);
-                    },
-
-                    async createBooking(bookingData) {
-                        return this.request('/bookings/bookings/', 'POST', bookingData);
-                    },
-
-                    setToken(token) {
-                        this.token = token;
-                        localStorage.setItem('auth_token', token);
-                    },
-
-                    clearToken() {
-                        this.token = null;
-                        localStorage.removeItem('auth_token');
-                    }
-                };
-            } else {
-                api.token = token;
-            }
-            return api;
-        }
-
-        /**
-         * Update navbar auth state
-         */
-        async function updateNavbarAuthState() {
-            const token = localStorage.getItem('auth_token');
-            const loginBtn = document.getElementById('loginBtn');
-            const profileIcon = document.getElementById('profileIcon');
-
-            if (!token) {
-                // Logged out
-                if (loginBtn) loginBtn.style.display = 'block';
-                if (profileIcon) profileIcon.style.display = 'none';
-            } else {
-                // Logged in
-                if (loginBtn) loginBtn.style.display = 'none';
-                if (profileIcon) {
-                    profileIcon.style.display = 'flex';
-                    try {
-                        const apiInstance = await initializeAPI();
-                        const profile = await apiInstance.getProfile();
-                        profileIcon.textContent = profile.name ? profile.name[0].toUpperCase() : '👤';
-                    } catch (error) {
-                        profileIcon.textContent = '👤';
-                    }
-                }
-            }
-        }
-
-        /**
-         * Autofill the booking form's Name / Phone / Email from the user's
-         * saved profile — same data shown on the Profile page. Name and
-         * email stay editable (and get synced back to the profile on
-         * booking); phone is permanent, so the field stays disabled here.
-         */
-        async function loadBookingProfileFields() {
-            const token = localStorage.getItem('auth_token');
-            const nameEl = document.getElementById('bookingName');
-            const phoneEl = document.getElementById('bookingPhone');
-            const emailEl = document.getElementById('bookingEmail');
-            if (!nameEl || !phoneEl || !emailEl) return;
-
-            if (!token) {
-                nameEl.value = '';
-                phoneEl.value = '';
-                emailEl.value = '';
-                return;
-            }
-
-            try {
-                const apiInstance = await initializeAPI();
-                const profile = await apiInstance.getProfile();
-                nameEl.value = profile.name || '';
-                phoneEl.value = profile.phone || '';
-                emailEl.value = profile.email || '';
-            } catch (error) {
-                console.warn('Could not load profile for autofill:', error);
-            }
-        }
-
-        /**
-         * Open login popup
-         */
-        function openLoginPopup() {
-            const overlay = document.getElementById('loginPopupOverlay');
-            if (overlay) {
-                overlay.classList.add('active');
-                document.getElementById('phoneForm').style.display = 'block';
-                document.getElementById('otpForm').style.display = 'none';
-                document.getElementById('phoneInput').value = '';
-                document.getElementById('otpInput').value = '';
-                document.getElementById('nameInput').value = '';
-                document.getElementById('loginError').style.display = 'none';
-            }
-        }
-
-        /**
-         * Close login popup
-         */
-        function closeLoginPopup() {
-            const overlay = document.getElementById('loginPopupOverlay');
-            if (overlay) {
-                overlay.classList.remove('active');
-            }
-        }
-
-        /**
-         * Submit phone form
-         */
-        async function submitPhoneForm(event) {
-            event.preventDefault();
-            const phone = document.getElementById('phoneInput').value.trim();
-            const errorDiv = document.getElementById('loginError');
-            const loadingDiv = document.getElementById('loginLoading');
-            const submitBtn = document.querySelector('#phoneForm button[type="submit"]');
-
-            if (!/^\d{10}$/.test(phone)) {
-                errorDiv.textContent = 'Please enter a valid 10-digit phone number';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                loadingDiv.style.display = 'block';
-                errorDiv.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = true;
-
-                const apiInstance = await initializeAPI();
-                await apiInstance.sendOTP(phone);
-
-                sessionStorage.setItem('login_phone', phone);
-                document.getElementById('phoneForm').style.display = 'none';
-                document.getElementById('otpForm').style.display = 'block';
-                startResendCountdown();
-            } catch (error) {
-                errorDiv.textContent = error.message || 'Could not send OTP. Try again.';
-                errorDiv.style.display = 'block';
-            } finally {
-                loadingDiv.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = false;
-            }
-        }
-
-        /**
-         * Submit OTP form
-         */
-        async function submitOTPForm(event) {
-            event.preventDefault();
-            const phone = sessionStorage.getItem('login_phone');
-            const otp = document.getElementById('otpInput').value.trim();
-            const name = document.getElementById('nameInput').value.trim();
-            const errorDiv = document.getElementById('loginError');
-            const loadingDiv = document.getElementById('loginLoading');
-            const submitBtn = document.querySelector('#otpForm button[type="submit"]');
-
-            if (!/^\d{4,6}$/.test(otp)) {
-                errorDiv.textContent = 'Please enter a valid OTP';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                loadingDiv.style.display = 'block';
-                errorDiv.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = true;
-
-                const apiInstance = await initializeAPI();
-                const response = await apiInstance.verifyOTP(phone, otp, name);
-                
-                localStorage.setItem('auth_token', response.token);
-                updateNavbarAuthState();
-                updateCartBadge();
-                loadBookingProfileFields();
-                closeLoginPopup();
-
-                if (window.onLoginSuccess) {
-                    window.onLoginSuccess();
-                    window.onLoginSuccess = null;
-                }
-            } catch (error) {
-                errorDiv.textContent = error.message || 'OTP verification failed. Please try again.';
-                errorDiv.style.display = 'block';
-            } finally {
-                loadingDiv.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = false;
-            }
-        }
-
-        /**
-         * Resend OTP with cooldown
-         */
-        async function resendOTP() {
-            const phone = sessionStorage.getItem('login_phone');
-            const errorDiv = document.getElementById('loginError');
-
-            if (!phone) {
-                errorDiv.textContent = 'Session expired. Please start over.';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                const apiInstance = await initializeAPI();
-                await apiInstance.sendOTP(phone);
-                errorDiv.style.display = 'none';
-                startResendCountdown();
-            } catch (error) {
-                errorDiv.textContent = error.message || 'Could not resend OTP. Try again.';
-                errorDiv.style.display = 'block';
-            }
-        }
-
-        /**
-         * Start 30-second countdown before allowing resend
-         */
-        function startResendCountdown() {
-            let seconds = 30;
-            const resendBtn = document.getElementById('resendBtn');
-            const resendCountdown = document.getElementById('resendCountdown');
-            const countdown = document.getElementById('countdown');
-
-            if (resendBtn) resendBtn.style.display = 'none';
-            if (resendCountdown) resendCountdown.style.display = 'inline';
-
-            const interval = setInterval(() => {
-                seconds--;
-                if (countdown) countdown.textContent = seconds;
-                if (seconds <= 0) {
-                    clearInterval(interval);
-                    if (resendCountdown) resendCountdown.style.display = 'none';
-                    if (resendBtn) resendBtn.style.display = 'inline-block';
-                }
-            }, 1000);
-        }
-
-        /**
-         * Update cart badge count
-         */
-        function updateCartBadge() {
-            const cart = getCart();
-            const badge = document.getElementById('cartBadge');
-            if (badge) {
-                badge.textContent = cart.length;
-            }
-        }
-
-        /**
-         * Get cart from localStorage
-         */
-        function getCart() {
-            const cartJSON = localStorage.getItem('vogx_cart');
-            return cartJSON ? JSON.parse(cartJSON) : [];
-        }
-
-        /**
-         * Setup gender toggle buttons
-         */
-        function setupGenderToggle() {
-            const genderToggle = document.getElementById('genderToggle');
-            if (!genderToggle) return;
-
-            const isServicesPage = window.location.pathname.includes('/services');
-            if (isServicesPage) {
-                genderToggle.style.display = 'flex';
-                const buttons = genderToggle.querySelectorAll('.gender-btn');
-                buttons.forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const gender = this.dataset.gender;
-                        window.location.href = `/services?gender=${gender}`;
-                    });
-                });
-
-                const params = new URLSearchParams(window.location.search);
-                const currentGender = params.get('gender') || 'men';
-                buttons.forEach(btn => {
-                    if (btn.dataset.gender === currentGender) {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
-                });
-            }
-        }
-
-        /**
-         * Logout user
-         */
-        async function logout() {
-            try {
-                const apiInstance = await initializeAPI();
-                await apiInstance.logout();
-            } catch (error) {
-                console.log('Logout request failed:', error);
-            }
-            localStorage.removeItem('auth_token');
-            updateNavbarAuthState();
-            window.location.href = '/';
-        }
-
-        /**
-         * Login if needed (for adding to cart, etc)
-         */
-        function loginIfNeeded(callback) {
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                window.onLoginSuccess = callback;
-                openLoginPopup();
-            } else {
-                callback();
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeAPI();
-            updateNavbarAuthState();
-            updateCartBadge();
-            setupGenderToggle();
-            setupPincodeValidation();
-            loadBookingProfileFields();
-        });
-
-        // Close popup when clicking outside
-        document.addEventListener('click', function(event) {
-            const overlay = document.getElementById('loginPopupOverlay');
-            if (event.target === overlay) {
-                closeLoginPopup();
-            }
-            const slotOverlay = document.getElementById('timeSlotModalOverlay');
-            if (event.target === slotOverlay) {
-                closeTimeSlotModal();
-            }
-        });
-
-        /**
-         * Display cart items from localStorage
-         */
-        function displayCart() {
-            const cart = getCart();
-            const container = document.getElementById('cartItemsContainer');
-            const bookingDetailsWrapper = document.getElementById('bookingDetailsWrapper');
-
-            if (!cart || cart.length === 0) {
-                container.innerHTML = `
-                    <div style="padding: 3rem 2rem; text-align: center;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🛒</div>
-                        <h2 style="color: var(--text-primary); margin-bottom: 0.5rem;">Your cart is empty</h2>
-                        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Add some services to get started!</p>
-                        <button onclick="window.location.href='/services'" style="padding: 0.75rem 1.5rem; background: var(--brand-primary); color: white; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">
-                            Browse Services
-                        </button>
-                    </div>
-                `;
-                if (bookingDetailsWrapper) {
-                    bookingDetailsWrapper.style.display = 'none';
-                }
-                updateOrderSummary([]);
-                return;
-            }
-
-            let html = '';
-            cart.forEach((item, index) => {
-                html += `
-                    <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-soft); display: flex; justify-content: space-between; align-items: start;">
-                        <div style="flex: 1;">
-                            <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.5rem;">${item.name}</h3>
-                            <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
-                                <span style="color: var(--text-secondary);">Price: <strong>₹${parseFloat(item.price).toFixed(2)}</strong></span>
-                                <input type="number" id="qty-${index}" value="1" min="1" style="width: 70px; padding: 0.5rem; border: 1px solid var(--border-soft); border-radius: 4px; font-size: 0.9rem;" onchange="updateQuantity(${index}, this.value)">
-                            </div>
-                            <div style="font-weight: 600; color: var(--brand-primary);">Subtotal: ₹<span id="item-total-${index}">${parseFloat(item.price).toFixed(2)}</span></div>
-                        </div>
-                        <button onclick="removeFromCart(${index})" style="padding: 0.5rem 1rem; background: var(--status-danger-bg); color: var(--status-danger-text); border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
-                            Remove
-                        </button>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-            updateOrderSummary(cart);
-        }
-
-        /**
-         * Update service charge based on service type
-         */
-        let currentDeliveryCharge = 0;
-
-        function updateServiceCharge() {
-            const serviceTypeEl = document.querySelector('input[name="serviceType"]:checked');
-            if (!serviceTypeEl) return;
-
-            const serviceType = serviceTypeEl.value;
-            const charge = serviceType === 'home' ? currentDeliveryCharge : 0;
-            const chargeEl = document.getElementById('serviceCharge');
-            if (chargeEl) chargeEl.textContent = '₹' + charge.toFixed(2);
-
-            const homeAddressFields = document.getElementById('homeAddressFields');
-            if (homeAddressFields) {
-                homeAddressFields.style.display = serviceType === 'home' ? 'block' : 'none';
-            }
-
-            const salonAddressFields = document.getElementById('salonAddressFields');
-            if (salonAddressFields) {
-                salonAddressFields.style.display = serviceType === 'salon' ? 'block' : 'none';
-                if (serviceType === 'salon') loadSalonAddress();
-            }
-
-            updateOrderSummary(getCart());
-        }
-
-        let pincodeCheckTimeout = null;
-
-        function setPincodeStatus(message, success = false, deliveryCharge = 0) {
-            const statusEl = document.getElementById('pincodeStatus');
-            const confirmBtn = document.getElementById('confirmBtn');
-            if (statusEl) {
-                statusEl.textContent = message;
-                statusEl.style.color = success ? 'green' : 'red';
-            }
-            if (confirmBtn) {
-                confirmBtn.disabled = !success && document.querySelector('input[name="serviceType"]:checked')?.value === 'home';
-            }
-            currentDeliveryCharge = success ? Number(deliveryCharge) || 0 : 0;
-            updateOrderSummary(getCart());
-        }
-
-        /**
-         * Load and display the salon's address (uploaded by admin under Salon Info)
-         * for customers who choose an in-salon visit.
-         */
-        let salonInfoCache = null;
-
-        async function loadSalonAddress() {
-            const box = document.getElementById('salonAddressBox');
-            if (!box) return;
-
-            if (salonInfoCache) {
-                renderSalonAddress(salonInfoCache);
-                return;
-            }
-
-            box.textContent = 'Loading salon address...';
-            try {
-                const apiInstance = await initializeAPI();
-                const response = await apiInstance.getSalonInfo();
-                const results = Array.isArray(response) ? response : response.results || [];
-                const salon = results.find(s => s.is_active) || results[0] || null;
-
-                if (!salon) {
-                    box.textContent = 'Salon address is not available right now.';
-                    return;
-                }
-
-                salonInfoCache = salon;
-                renderSalonAddress(salon);
-            } catch (error) {
-                console.error('Could not load salon info:', error);
-                box.textContent = 'Unable to load salon address right now.';
-            }
-        }
-
-        function renderSalonAddress(salon) {
-            const box = document.getElementById('salonAddressBox');
-            if (!box) return;
-            box.innerHTML = `
-                <strong>${salon.name || 'Our Salon'}</strong><br>
-                ${salon.address || ''}<br>
-                ${salon.city || ''}${salon.city && salon.state ? ', ' : ''}${salon.state || ''} ${salon.zip_code || ''}<br>
-                ${salon.phone ? `📞 ${salon.phone}` : ''}
-            `;
-        }
-
-        async function validatePincodeServiceability() {
-            const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || 'home';
-            const pincode = document.getElementById('bookingPincode')?.value.trim();
-            const confirmBtn = document.getElementById('confirmBtn');
-
-            if (serviceType !== 'home') {
-                if (confirmBtn) confirmBtn.disabled = false;
-                setPincodeStatus('', true);
-                return;
-            }
-
-            if (!pincode || pincode.length < 6) {
-                setPincodeStatus('Enter a valid 6-digit pincode.', false);
-                return;
-            }
-
-            try {
-                const apiInstance = await initializeAPI();
-                const result = await apiInstance.checkPincode(pincode);
-                if (result.serviceable) {
-                    setPincodeStatus(`✓ We deliver here — delivery charge ₹${parseFloat(result.delivery_charge).toFixed(2)}.`, true, result.delivery_charge);
-                } else {
-                    setPincodeStatus("Sorry, we don't currently service this pincode.", false);
-                }
-            } catch (error) {
-                setPincodeStatus('Unable to verify pincode right now.', false);
-                console.error('Pincode check error:', error);
-            }
-        }
-
-        function schedulePincodeValidation() {
-            clearTimeout(pincodeCheckTimeout);
-            pincodeCheckTimeout = setTimeout(validatePincodeServiceability, 500);
-        }
-
-        function handleServiceTypeChange() {
-            updateServiceCharge();
-            schedulePincodeValidation();
-        }
-
-        function setupPincodeValidation() {
-            const pincodeInput = document.getElementById('bookingPincode');
-            if (pincodeInput) {
-                pincodeInput.addEventListener('input', schedulePincodeValidation);
-            }
-        }
-
-        async function loadBookingSettings() {
-            try {
-                const apiInstance = await initializeAPI();
-                const response = await apiInstance.getSalonSettings();
-                const results = Array.isArray(response) ? response : response.results || [];
-                const settings = results[0] || null;
-
-                if (settings) {
-                    ADVANCE_BOOKING_DAYS = Number(settings.advance_booking_days) || ADVANCE_BOOKING_DAYS;
-                    MIN_BOOKING_NOTICE_HOURS = Number(settings.min_booking_notice_hours) || MIN_BOOKING_NOTICE_HOURS;
-                }
-            } catch (error) {
-                console.warn('Could not load salon settings, using defaults.', error);
-            }
-
-            // Reflect the admin-configured advance-booking window wherever it's mentioned.
-            const noteText = `You can book today and up to the next ${ADVANCE_BOOKING_DAYS} day${ADVANCE_BOOKING_DAYS === 1 ? '' : 's'}. ` +
-                (MIN_BOOKING_NOTICE_HOURS > 0 ? `Same-day slots need at least ${MIN_BOOKING_NOTICE_HOURS} hour${MIN_BOOKING_NOTICE_HOURS === 1 ? '' : 's'} notice.` : '');
-            const note1 = document.getElementById('advanceBookingNote');
-            const note2 = document.getElementById('modalAdvanceNote');
-            if (note1) note1.textContent = noteText;
-            if (note2) note2.textContent = noteText;
-        }
-
-        // Booking date/time are now chosen inside the Time Slot popup
-        // (openTimeSlotModal), so there's nothing to prefill on page load.
-        function setBookingDateMin() {}
-
-        function formatSlotLabel(timeValue) {
-            const [hourString, minuteString] = timeValue.split(':');
-            let hour = parseInt(hourString, 10);
-            const minute = minuteString || '00';
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            if (hour === 0) hour = 12;
-            if (hour > 12) hour -= 12;
-            return `${hour}:${minute} ${ampm}`;
-        }
-
-        function formatDateLabel(dateStr) {
-            if (!dateStr) return '';
-            const d = new Date(dateStr + 'T00:00:00');
-            return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
-        }
-
-        // ── Time Slot Popup: pick a day, then pick an available time ────
-        let modalPendingTime = null; // { value, label } chosen but not yet confirmed
-
-        function openTimeSlotModal() {
-            const cart = getCart();
-            if (!cart.length) {
-                alert('Your cart is empty — add a service before choosing a slot.');
-                return;
-            }
-
-            const modalDateInput = document.getElementById('modalBookingDate');
-            const now = new Date();
-            const minDate = new Date(now.getTime());
-            const maxDate = new Date(now.getTime() + ADVANCE_BOOKING_DAYS * 24 * 60 * 60 * 1000);
-
-            modalDateInput.min = minDate.toISOString().split('T')[0];
-            modalDateInput.max = maxDate.toISOString().split('T')[0];
-
-            const existingDate = document.getElementById('bookingDate').value;
-            modalDateInput.value = existingDate || modalDateInput.min;
-
-            modalPendingTime = null;
-            document.getElementById('modalConfirmSlotBtn').disabled = true;
-            document.getElementById('modalSlotError').style.display = 'none';
-
-            document.getElementById('timeSlotModalOverlay').classList.add('active');
-            onModalDateChange(modalDateInput.value);
-        }
-
-        function closeTimeSlotModal() {
-            document.getElementById('timeSlotModalOverlay').classList.remove('active');
-        }
-
-        async function onModalDateChange(date) {
-            const grid = document.getElementById('modalSlotGrid');
-            const confirmBtn = document.getElementById('modalConfirmSlotBtn');
-            modalPendingTime = null;
-            confirmBtn.disabled = true;
-
-            if (!date) {
-                grid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Pick a date to see available slots.</p>';
-                return;
-            }
-
-            grid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Loading available slots...</p>';
-
-            const cart = getCart();
-            if (!cart.length) {
-                grid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">No cart items to choose a slot.</p>';
-                return;
-            }
-
-            const serviceId = cart[0].id;
-
-            try {
-                const apiInstance = await initializeAPI();
-                // The backend (TimeSlotViewSet.list) already applies the salon's
-                // min-notice-hours (for today only), advance-booking window, and
-                // max-bookings-per-slot rules — so every slot returned here is
-                // genuinely bookable.
-                const response = await apiInstance.getTimeSlots(serviceId, date);
-                const slots = Array.isArray(response) ? response : response.results || [];
-
-                if (slots.length === 0) {
-                    grid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">No slots available for this date.</p>';
-                    return;
-                }
-
-                grid.innerHTML = '';
-                slots.forEach(slot => {
-                    const timeValue = slot.time.includes(':00') && slot.time.split(':').length === 3
-                        ? slot.time.slice(0, 5)
-                        : slot.time;
-                    const label = formatSlotLabel(timeValue);
-
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'slot-btn';
-                    btn.textContent = label;
-                    btn.onclick = () => selectModalSlot(slot.time, label, btn);
-                    grid.appendChild(btn);
-                });
-            } catch (error) {
-                grid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Unable to load time slots right now.</p>';
-                console.error('Time slot load error:', error);
-            }
-        }
-
-        function selectModalSlot(timeValue, label, btnEl) {
-            document.querySelectorAll('#modalSlotGrid .slot-btn').forEach(b => b.classList.remove('selected'));
-            btnEl.classList.add('selected');
-            modalPendingTime = { value: timeValue, label };
-            document.getElementById('modalConfirmSlotBtn').disabled = false;
-        }
-
-        function confirmTimeSlotSelection() {
-            const date = document.getElementById('modalBookingDate').value;
-            const errorEl = document.getElementById('modalSlotError');
-
-            if (!date || !modalPendingTime) {
-                errorEl.textContent = 'Please pick both a date and a time slot.';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            document.getElementById('bookingDate').value = date;
-            document.getElementById('bookingTime').value = modalPendingTime.value;
-            document.getElementById('chosenSlotLabel').textContent = `📅 ${formatDateLabel(date)} · ⏰ ${modalPendingTime.label}`;
-            document.getElementById('chosenSlotLabel').style.color = 'var(--text-primary)';
-
-            closeTimeSlotModal();
-        }
-
-        /**
-         * Update order summary totals
-         */
-        function updateOrderSummary(cart) {
-            const bookingDetailsWrapper = document.getElementById('bookingDetailsWrapper');
-            const summarySubtotalEl = document.getElementById('summarySubtotal');
-            const chargeEl = document.getElementById('serviceCharge');
-            const convenienceFeeEl = document.getElementById('convenienceFee');
-            const summaryTotalEl = document.getElementById('summaryTotal');
-
-            if (!cart || cart.length === 0) {
-                if (bookingDetailsWrapper) {
-                    bookingDetailsWrapper.style.display = 'none';
-                }
-                if (summarySubtotalEl) summarySubtotalEl.textContent = '₹0.00';
-                if (chargeEl) chargeEl.textContent = '₹0.00';
-                if (convenienceFeeEl) convenienceFeeEl.textContent = '₹0.00';
-                if (summaryTotalEl) summaryTotalEl.textContent = '₹0.00';
-                return;
-            }
-
-            if (bookingDetailsWrapper) {
-                bookingDetailsWrapper.style.display = 'block';
-            }
-
-            let totalItems = 0;
-            let totalPrice = 0;
-
-            cart.forEach((item, idx) => {
-                const qty = parseInt(document.getElementById(`qty-${idx}`)?.value) || 1;
-                totalItems += qty;
-                totalPrice += parseFloat(item.price) * qty;
-            });
-
-            const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || 'home';
-            const serviceCharge = serviceType === 'home' ? currentDeliveryCharge : 0;
-            const convenienceFee = 20;
-            const finalTotal = totalPrice + serviceCharge + convenienceFee;
-
-            if (summarySubtotalEl) summarySubtotalEl.textContent = '₹' + totalPrice.toFixed(2);
-            if (chargeEl) chargeEl.textContent = '₹' + serviceCharge.toFixed(2);
-            if (convenienceFeeEl) convenienceFeeEl.textContent = '₹' + convenienceFee.toFixed(2);
-            if (summaryTotalEl) summaryTotalEl.textContent = '₹' + finalTotal.toFixed(2);
-        }
-
-        /**
-         * Update item quantity
-         */
-        function updateQuantity(index, quantity) {
-            const cart = getCart();
-            const qty = Math.max(1, parseInt(quantity) || 1);
-            const qtyInput = document.getElementById(`qty-${index}`);
-            if (qtyInput) qtyInput.value = qty;
-            
-            const itemTotal = parseFloat(cart[index].price) * qty;
-            const itemTotalEl = document.getElementById(`item-total-${index}`);
-            if (itemTotalEl) itemTotalEl.textContent = itemTotal.toFixed(2);
-            
-            updateOrderSummary(cart);
-        }
-
-        /**
-         * Remove item from cart
-         */
-        function removeFromCart(index) {
-            const cart = getCart();
-            const itemName = cart[index].name;
-            cart.splice(index, 1);
-            localStorage.setItem('vogx_cart', JSON.stringify(cart));
-            updateCartBadge();
-            displayCart();
-
-            // Show success toast
-            const toast = document.createElement('div');
-            toast.className = 'success-toast';
-            toast.textContent = `✓ ${itemName} removed from cart`;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-        
-
-        /**
-         * Trigger Razorpay checkout for a single booking
-         */
-        async function payForBooking(booking) {
-            const apiInstance = await initializeAPI();
-            const orderResp = await apiInstance.request('/payments/create-order/', 'POST', { booking_id: booking.id });
-
-            return new Promise((resolve, reject) => {
-                const options = {
-                    key: orderResp.key,
-                    amount: orderResp.amount * 100,
-                    currency: orderResp.currency,
-                    order_id: orderResp.order_id,
-                    name: 'VOGX Salon',
-                    description: `Payment for booking #${booking.id}`,
-                    handler: async function (response) {
-                        try {
-                            await apiInstance.request('/payments/verify-payment/', 'POST', {
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                            });
-                            resolve(true);
-                        } catch (err) {
-                            reject(err);
-                        }
-                    },
-                    prefill: {
-                        name: document.getElementById('bookingName').value.trim(),
-                        contact: document.getElementById('bookingPhone').value.trim(),
-                    },
-                    theme: { color: '#ff6b9d' },
-                    modal: {
-                        ondismiss: function () { reject(new Error('Payment cancelled')); }
-                    }
-                };
-                const rzp = new Razorpay(options);
-                rzp.open();
-            });
-        }
-
-        /**
-         * Show the final "Booking Confirmed" popup after payment (online or
-         * pay-later) succeeds, then reset the page back to an empty cart.
-         */
-        function showBookingConfirmedModal(group, method) {
-            const msg = method === 'online'
-                ? `Payment received — your booking for ${group.bookings.length} service(s) on ${new Date(group.booking_date).toLocaleDateString()} is confirmed.`
-                : `Your booking for ${group.bookings.length} service(s) on ${new Date(group.booking_date).toLocaleDateString()} is confirmed. You can pay after the service.`;
-            document.getElementById('bookingConfirmedMessage').textContent = msg;
-            document.getElementById('bookingConfirmedOverlay').classList.add('active');
-        }
-
-        function closeBookingConfirmedModal() {
-            document.getElementById('bookingConfirmedOverlay').classList.remove('active');
-
-            // Cart was already cleared when the booking group was created;
-            // refresh the page state so it visibly shows as empty now.
-            document.getElementById('bookingNotes').value = '';
-            document.getElementById('bookingPincode').value = '';
-            document.getElementById('bookingHouseNumber').value = '';
-            document.getElementById('bookingStreetArea').value = '';
-            document.getElementById('bookingLandmark').value = '';
-            document.getElementById('bookingDate').value = '';
-            document.getElementById('bookingTime').value = '';
-            document.getElementById('chosenSlotLabel').textContent = '📅 Select a day & time slot';
-            document.getElementById('chosenSlotLabel').style.color = 'var(--text-muted)';
-
-            displayCart();
-            updateCartBadge();
-        }
-
-        /**
-         * Show payment method choice modal, resolve once user completes a flow
-         */
-       function showPaymentMethodModal(group) {
-            return new Promise((resolve) => {
-                document.getElementById('paymentModalTotal').textContent = '₹' + parseFloat(group.total_price).toFixed(2);
-                document.getElementById('paymentModalError').style.display = 'none';
-                document.getElementById('paymentMethodOverlay').classList.add('active');
-
-                const cleanup = () => {
-                    document.getElementById('paymentMethodOverlay').classList.remove('active');
-                };
-
-                document.getElementById('payOnlineBtn').onclick = async () => {
-                    const onlineBtn = document.getElementById('payOnlineBtn');
-                    onlineBtn.disabled = true;
-                    onlineBtn.textContent = 'Opening payment...';
-                    try {
-                        await payForGroupCombined(group);
-                        cleanup();
-                        showBookingConfirmedModal(group, 'online');
-                        resolve();
-                    } catch (err) {
-                        document.getElementById('paymentModalError').textContent = err.message || 'Payment failed';
-                        document.getElementById('paymentModalError').style.display = 'block';
-                    } finally {
-                        onlineBtn.disabled = false;
-                        onlineBtn.textContent = '💳 Pay Online Now';
-                    }
-                };
-
-                document.getElementById('payLaterBtn').onclick = async () => {
-                    const laterBtn = document.getElementById('payLaterBtn');
-                    laterBtn.disabled = true;
-                    laterBtn.textContent = 'Confirming...';
-                    try {
-                        const apiInstance = await initializeAPI();
-                        await apiInstance.request('/payments/confirm-pay-later/', 'POST', {
-                            group_id: group.id
-                        });
-                        cleanup();
-                        showBookingConfirmedModal(group, 'pay_later');
-                        resolve();
-                    } catch (err) {
-                        document.getElementById('paymentModalError').textContent = err.message || 'Something went wrong';
-                        document.getElementById('paymentModalError').style.display = 'block';
-                        laterBtn.disabled = false;
-                        laterBtn.textContent = '🕐 Pay After Service';
-                    }
-                };
-            });
-        }
-
-                
-
-        /**
-         * Create one combined Razorpay order covering all bookings, open checkout once
-         */
-        async function payForGroupCombined(group) {
-            const apiInstance = await initializeAPI();
-            const orderResp = await apiInstance.request('/payments/create-combined-order/', 'POST', {
-                group_id: group.id
-            });
-
-            return new Promise((resolve, reject) => {
-                const options = {
-                    key: orderResp.key,
-                    amount: orderResp.amount * 100,
-                    currency: orderResp.currency,
-                    order_id: orderResp.order_id,
-                    name: 'VOGX Salon',
-                    description: `Payment for ${group.bookings.length} service(s)`,
-                    handler: async function (response) {
-                        try {
-                            await apiInstance.request('/payments/verify-combined-payment/', 'POST', {
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                            });
-                            resolve(true);
-                        } catch (err) {
-                            reject(err);
-                        }
-                    },
-                    prefill: {
-                        name: document.getElementById('bookingName').value.trim(),
-                        contact: document.getElementById('bookingPhone').value.trim(),
-                    },
-                    theme: { color: '#ff6b9d' },
-                    modal: {
-                        ondismiss: function () { reject(new Error('Payment cancelled')); }
-                    }
-                };
-                new Razorpay(options).open();
-            });
-        }
-        /**
-         * Confirm booking
-         */
-        async function confirmBooking() {
-            const cart = getCart();
-            if (cart.length === 0) {
-                alert('Your cart is empty!');
-                return;
-            }
-
-            // Validate form
-            const name = document.getElementById('bookingName').value.trim();
-            const email = document.getElementById('bookingEmail').value.trim();
-            const serviceType = document.querySelector('input[name="serviceType"]:checked').value;
-
-            if (!name) {
-                alert('Please enter your name');
-                return;
-            }
-            if (!email) {
-                alert('Please enter your email address');
-                return;
-            }
-
-            const bookingDate = document.getElementById('bookingDate').value;
-            const bookingTime = document.getElementById('bookingTime').value;
-            const pincode = document.getElementById('bookingPincode').value.trim();
-            const houseNumber = document.getElementById('bookingHouseNumber').value.trim();
-            const streetArea = document.getElementById('bookingStreetArea').value.trim();
-            const landmark = document.getElementById('bookingLandmark').value.trim();
-            const notes = document.getElementById('bookingNotes').value.trim();
-
-            if (!bookingDate || !bookingTime) {
-                alert('Please choose a day and time slot for your booking');
-                return;
-            }
-
-            if (serviceType === 'home') {
-                if (!pincode || !houseNumber || !streetArea) {
-                    alert('Please fill in pincode, house number and street / area for home service');
-                    return;
-                }
-            }
-
-            // Check if user is logged in
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                window.onLoginSuccess = confirmBooking;
-                openLoginPopup();
-                return;
-            }
-
-            const apiInstance = await initializeAPI();
-
-            try {
-                const confirmBtn = document.getElementById('confirmBtn');
-                confirmBtn.disabled = true;
-                confirmBtn.textContent = 'Processing...';
-
-                const groupPayload = {
-                    service_ids: cart
-                        .filter(item => item.type === 'service')
-                        .map(item => item.id),
-
-                    package_ids: cart
-                        .filter(item => item.type === 'package')
-                        .map(item => item.id),
-
-                    booking_date: bookingDate,
-                    booking_time: bookingTime,
-                    booking_type: serviceType,
-                    notes: notes,
-                    name: name,
-                    email: email
-                };
-                if (serviceType === 'home') {
-                    groupPayload.pincode = pincode;
-                    groupPayload.house_number = houseNumber;
-                    groupPayload.street_area = streetArea;
-                    if (landmark) groupPayload.landmark = landmark;
-                }
-
-                const group = await apiInstance.request('/bookings/booking-groups/', 'POST', groupPayload);
-
-                localStorage.removeItem('vogx_cart');
-                updateCartBadge();
-
-                confirmBtn.textContent = '✓ Confirm Booking';
-                confirmBtn.disabled = false;
-
-                await showPaymentMethodModal(group);
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to confirm booking: ' + error.message);
-                const confirmBtn = document.getElementById('confirmBtn');
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = '✓ Confirm Booking';
-            }
-        }
-
-        // Display cart on page load
-        document.addEventListener('DOMContentLoaded', async function() {
-            displayCart();
-            updateServiceCharge();
-            await loadBookingSettings();
-            setBookingDateMin();
-        });
-    </script>
-    {% block extra_js %}{% endblock %}
-<div id="paymentMethodOverlay" class="login-popup-overlay">
-    <div class="login-popup">
-        <div class="login-popup-header">
-            <h2 class="login-popup-title">Choose Payment Method</h2>
-        </div>
-        <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Total amount: <strong id="paymentModalTotal">₹0.00</strong></p>
-        <button class="login-btn" id="payOnlineBtn" style="margin-bottom: 0.75rem;">💳 Pay Online Now</button>
-        <button class="login-btn" id="payLaterBtn" style="background: var(--text-muted);">🕐 Pay After Service</button>
-        <div id="paymentModalError" class="login-error" style="margin-top: 1rem;"></div>
-    </div>
+<!-- BOOKING CONFIRMED -->
+<div class="modal" id="bookingConfirmedOverlay">
+  <div class="modal__box" style="text-align:center">
+    <div style="font-size:44px;margin-bottom:8px">🎉</div>
+    <h2 class="modal__title">Booking confirmed</h2>
+    <p id="bookingConfirmedMessage" class="modal__sub" style="margin-bottom:20px"></p>
+    <button class="submit" onclick="closeBookingConfirmedModal()">Done</button>
+  </div>
 </div>
+
+<!-- CANCELLATION POLICY (placeholder) -->
+<div class="modal" id="cancelPolicyModal">
+  <div class="modal__box wide">
+    <button class="modal__close" onclick="closePolicy('cancelPolicyModal')">×</button>
+    <h2 class="modal__title">Cancellation Policy</h2>
+    <p class="modal__sub">Full policy content will be added here shortly.</p>
+    <div style="font-size:14px;color:var(--gray-1);line-height:1.65">
+      <p style="margin-bottom:10px">You may cancel a booking anytime before the scheduled service time. Refunds (if applicable) are processed within 5–7 business days to the original payment method.</p>
+      <p>For same-day cancellations less than 2 hours before your slot, a small handling charge may apply.</p>
+    </div>
+  </div>
+</div>
+<div class="modal" id="privacyModal">
+  <div class="modal__box wide">
+    <button class="modal__close" onclick="closePolicy('privacyModal')">×</button>
+    <h2 class="modal__title">Privacy Policy</h2>
+    <p class="modal__sub">Full policy content will be added here shortly.</p>
+  </div>
+</div>
+<div class="modal" id="termsModal">
+  <div class="modal__box wide">
+    <button class="modal__close" onclick="closePolicy('termsModal')">×</button>
+    <h2 class="modal__title">Terms & Conditions</h2>
+    <p class="modal__sub">Full policy content will be added here shortly.</p>
+  </div>
+</div>
+
+<!-- PAYMENT METHOD MODAL (used after group creation) -->
+<div class="modal" id="paymentMethodOverlay">
+  <div class="modal__box">
+    <h2 class="modal__title">Confirm payment</h2>
+    <p class="modal__sub">Total amount: <strong id="paymentModalTotal">₹0.00</strong></p>
+    <div id="paymentModalError" class="modal__err"></div>
+    <button class="submit" id="payOnlineBtn" style="margin-bottom:10px">Pay online now</button>
+    <button class="submit" id="payLaterBtn" style="background:var(--white);color:var(--ink);border:1.5px solid var(--gray-4)">Pay after service</button>
+  </div>
+</div>
+
+<main class="page">
+  <div class="container">
+    <div class="page__head">
+      <span class="page__eyebrow">Checkout</span>
+      <h1 class="page__title">Review &amp; <em>confirm</em> your booking</h1>
+      <p class="page__sub">Fill your details, pick a time, and choose how you'd like to pay.</p>
+    </div>
+
+    <div class="layout">
+      <!-- LEFT: form sections -->
+      <div id="formCol">
+        <!-- 1. PERSONAL DETAILS -->
+        <section class="card">
+          <div class="card__head">
+            <div class="card__title"><span class="card__step">1</span> Personal details</div>
+          </div>
+          <div class="field">
+            <label class="label">Full name</label>
+            <input type="text" id="bookingName" class="input" placeholder="Enter your full name">
+          </div>
+          <div class="field__row g2">
+            <div class="field">
+              <label class="label">Phone number</label>
+              <input type="tel" id="bookingPhone" class="input" placeholder="10-digit number" maxlength="10" disabled>
+              <p class="help">Used to log in — can't be changed here.</p>
+            </div>
+            <div class="field">
+              <label class="label">Email address</label>
+              <input type="email" id="bookingEmail" class="input" placeholder="you@example.com">
+              <p class="help">Required to complete your booking.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. HOME / SALON -->
+        <section class="card">
+          <div class="card__head">
+            <div class="card__title"><span class="card__step">2</span> Where would you like the service?</div>
+          </div>
+          <div class="seg" id="serviceTypeSeg">
+            <div class="seg__opt active" data-value="home" onclick="selectServiceType('home')">
+              <span class="seg__radio"></span>
+              <div class="seg__body">
+                <div class="seg__t">Home service</div>
+                <div class="seg__d">We come to you. Small home-visit charge based on your pincode.</div>
+              </div>
+            </div>
+            <div class="seg__opt" data-value="salon" onclick="selectServiceType('salon')">
+              <span class="seg__radio"></span>
+              <div class="seg__body">
+                <div class="seg__t">Salon visit</div>
+                <div class="seg__d">Come in and enjoy the full salon experience.</div>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="serviceType" value="home">
+        </section>
+
+        <!-- 3. SELECT TIME -->
+        <section class="card">
+          <div class="card__head">
+            <div class="card__title"><span class="card__step">3</span> Choose day &amp; time</div>
+          </div>
+          <label class="label">Select a day</label>
+          <div class="days" id="dayList">
+            <div class="slots-empty" style="grid-column:1/-1">Loading available days…</div>
+          </div>
+          <div class="slots-label">Available time slots</div>
+          <div class="slots" id="slotGrid">
+            <div class="slots-empty">Pick a day to see slots.</div>
+          </div>
+          <input type="hidden" id="bookingDate">
+          <input type="hidden" id="bookingTime">
+          <p class="help" id="advanceBookingNote" style="margin-top:10px">You can book today and up to the next 3 days only.</p>
+        </section>
+
+        <!-- 4. ADDRESS -->
+        <section class="card" id="addressCard">
+          <div class="card__head">
+            <div class="card__title"><span class="card__step">4</span> Service address</div>
+          </div>
+
+          <div id="salonAddressFields" style="display:none">
+            <div class="salon-addr" id="salonAddressBox">Loading salon address…</div>
+          </div>
+
+          <div id="homeAddressFields">
+            <div class="field__row g2">
+              <div class="field">
+                <label class="label">Pincode</label>
+                <input type="text" id="bookingPincode" class="input" placeholder="6-digit pincode" maxlength="10">
+                <div id="pincodeStatus" class="help"></div>
+              </div>
+              <div class="field">
+                <label class="label">House / Flat No.</label>
+                <input type="text" id="bookingHouseNumber" class="input" placeholder="House / Flat No." maxlength="50">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Street / Area</label>
+              <input type="text" id="bookingStreetArea" class="input" placeholder="Street, area or locality" maxlength="255">
+            </div>
+            <div class="field">
+              <label class="label">Landmark <span style="text-transform:none;font-weight:400;color:var(--gray-3);letter-spacing:0">(optional)</span></label>
+              <input type="text" id="bookingLandmark" class="input" placeholder="Any nearby landmark" maxlength="255">
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:14px">
+            <label class="label">Notes <span style="text-transform:none;font-weight:400;color:var(--gray-3);letter-spacing:0">(optional)</span></label>
+            <textarea id="bookingNotes" class="textarea" placeholder="Any preferences or instructions"></textarea>
+          </div>
+        </section>
+
+        <!-- 5. PAYMENT -->
+        <section class="card">
+          <div class="card__head">
+            <div class="card__title"><span class="card__step">5</span> Payment</div>
+          </div>
+          <p class="modal__sub" style="margin-top:-6px">All transactions are secure and encrypted.</p>
+
+          <div class="pm" id="paymentMethods">
+            <div class="pm__opt active" data-pm="online" onclick="selectPaymentMethod('online')">
+              <span class="pm__radio"></span>
+              <div class="pm__label">
+                Cards, UPI, NB, Wallets, EMI
+                <span class="pm__sub">Powered by Razorpay · secure checkout</span>
+              </div>
+              <div class="pm__logos">
+                <span class="pm__logo" style="color:#1a1f71">VISA</span>
+                <span class="pm__logo" style="background:linear-gradient(90deg,#eb001b 0 50%,#f79e1b 50% 100%);color:#fff">MC</span>
+                <span class="pm__logo" style="color:#097939">UPI</span>
+                <span class="pm__logo" style="color:#e31837">RuPay</span>
+                <span class="pm__logo more">+6</span>
+              </div>
+            </div>
+            <div class="pm__opt" data-pm="later" onclick="selectPaymentMethod('later')">
+              <span class="pm__radio"></span>
+              <div class="pm__label">
+                Pay after service
+                <span class="pm__sub">Cash or UPI, paid at the end of your appointment</span>
+              </div>
+              <div class="pm__logos">
+                <span class="pm__logo" style="color:var(--brand)">CASH</span>
+                <span class="pm__logo" style="color:#097939">UPI</span>
+              </div>
+            </div>
+            <div class="pm__info" id="pmInfo">You'll be redirected to Cards, UPI, NB, Wallets, EMI by Razorpay to complete your purchase.</div>
+          </div>
+          <input type="hidden" id="paymentMethod" value="online">
+
+          <button class="submit" id="confirmBtn" onclick="confirmBooking()">
+            Confirm booking
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </button>
+
+          <div class="policies">
+            <a href="#" onclick="openPolicy('privacyModal',event)">Privacy Policy</a>
+            <a href="#" onclick="openPolicy('termsModal',event)">Terms &amp; Conditions</a>
+            <a href="#" onclick="openPolicy('cancelPolicyModal',event)">Cancellation Policy</a>
+          </div>
+        </section>
+      </div>
+
+      <!-- RIGHT: items + bill -->
+      <aside class="aside" id="asideCol">
+        <div class="items" id="itemsCard">
+          <div class="items__head">
+            <div class="items__title">Your items</div>
+            <button class="items__cxl" onclick="openPolicy('cancelPolicyModal',event)" title="View cancellation policy">
+              <span class="i">i</span> Cancellation policy
+            </button>
+          </div>
+          <div id="cartItemsContainer">
+            <div style="padding:24px;text-align:center;color:var(--gray-3);font-size:13.5px">Loading cart…</div>
+          </div>
+        </div>
+
+        <div class="bill" id="billCard">
+          <div class="bill__title">Bill summary</div>
+          <div class="bill__row"><span>Subtotal · <span id="billItemCount">0</span> item(s)</span><strong id="summarySubtotal">₹0.00</strong></div>
+          <div class="bill__row" id="homeChargeRow"><span>Home visit charge</span><strong id="serviceCharge">₹0.00</strong></div>
+          <div class="bill__sep"></div>
+          <div class="bill__total"><span>Total</span><span><span class="bill__total-cur">INR</span><span id="summaryTotal">₹0.00</span></span></div>
+          <p class="bill__note">Inclusive of all applicable taxes (GST).</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+{% block content %}{% endblock %}
+
+<!-- FOOTER -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <div class="footer__brand-logo">
+          <img id="footerLogoImg" src="" alt="VOGX" style="display:none;">
+        </div>
+        <p class="footer__tagline" id="footerTagline">Look Good, Feel Great.</p>
+        <div class="footer__socials">
+          <a class="footer__social" href="#" id="footerInsta" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          </a>
+          <a class="footer__social" href="#" id="footerFb" aria-label="Facebook">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </a>
+          <a class="footer__social" href="#" id="footerWa" aria-label="WhatsApp">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer__col">
+        <h4>Company</h4>
+        <a href="#" onclick="openPolicy('privacyModal',event)">Privacy Policy</a>
+        <a href="#" onclick="openPolicy('termsModal',event)">Terms &amp; Conditions</a>
+        <a href="#" onclick="openPolicy('cancelPolicyModal',event)">Cancellation Policy</a>
+      </div>
+      <div class="footer__col">
+        <h4>Services</h4>
+        <a href="/services?gender=men">Men's Salon</a>
+        <a href="/services?gender=women">Women's Salon</a>
+        <a href="/services">All Services</a>
+        <a href="/services">Packages</a>
+      </div>
+      <div class="footer__col" id="footerContact">
+        <h4>Contact</h4>
+        <div class="footer__contact-item">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 010 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 14.92z"/></svg>
+          <span id="footerPhone">+91 XXXXXXXXXX</span>
+        </div>
+        <div class="footer__contact-item">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span id="footerEmail">info@vogxsalon.com</span>
+        </div>
+        <div class="footer__contact-item">
+          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span id="footerAddress">Kanpur, Uttar Pradesh</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer__bottom">
+    <div class="container">
+      <p id="footerCopy">&copy; 2026 VOGX Salon. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<div class="toast-rack" id="toastRack" aria-live="polite"></div>
+
+<script>
+/* ─────────────── API layer ─────────────── */
+const API_BASE='/api';
+let ADVANCE_BOOKING_DAYS=3;
+let MIN_BOOKING_NOTICE_HOURS=0;
+let api=null;
+
+async function initializeAPI(){
+  const token=localStorage.getItem('auth_token');
+  if(!api){
+    api={
+      token,
+      getCSRFToken(){
+        const meta=document.querySelector('[name=csrftoken]');
+        if(meta)return meta.getAttribute('content');
+        for(const c of document.cookie.split(';')){const [n,v]=c.trim().split('=');if(n==='csrftoken')return v;}
+        return null;
+      },
+      async request(endpoint,method='GET',data=null){
+        const opts={method,headers:{'Content-Type':'application/json'}};
+        if(this.token)opts.headers['Authorization']=`Token ${this.token}`;
+        if(['POST','PUT','PATCH','DELETE'].includes(method.toUpperCase())){
+          const t=this.getCSRFToken();if(t)opts.headers['X-CSRFToken']=t;
+        }
+        if(data)opts.body=JSON.stringify(data);
+        const r=await fetch(`${API_BASE}${endpoint}`,opts);
+        if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||e.message||'Request failed');}
+        return r.json();
+      },
+      sendOTP(phone){return this.request('/auth/send-otp/','POST',{phone});},
+      async verifyOTP(phone,otp,name){const r=await this.request('/auth/verify-otp/','POST',{phone,otp,name});this.token=r.token;return r;},
+      getProfile(){return this.request('/auth/profile/');},
+      logout(){return this.request('/auth/logout/','POST');},
+      getSalonSettings(){return this.request('/salon-settings/');},
+      getSalonInfo(){return this.request('/salon-info/?is_active=true');},
+      getTimeSlots(serviceId,date){return this.request(`/bookings/time-slots/?service=${serviceId}&date=${date}&is_available=true`);},
+      checkPincode(p){return this.request(`/check-pincode/?pincode=${encodeURIComponent(p)}`);},
+      setToken(t){this.token=t;localStorage.setItem('auth_token',t);},
+      clearToken(){this.token=null;localStorage.removeItem('auth_token');}
+    };
+  }else{api.token=token;}
+  return api;
+}
+
+/* ─────────────── Nav / auth ─────────────── */
+async function updateNavbarAuthState(){
+  const token=localStorage.getItem('auth_token');
+  const loginBtn=document.getElementById('loginBtn');
+  const profileIcon=document.getElementById('profileArea"');
+  if(!token){loginBtn.style.display='block';profileIcon.style.display='none';return;}
+  loginBtn.style.display='none';profileIcon.style.display='flex';
+  try{const a=await initializeAPI();const p=await a.getProfile();profileIcon.textContent=p.name?p.name[0].toUpperCase():'U';}
+  catch{profileIcon.textContent='U';}
+}
+async function loadBookingProfileFields(){
+  const token=localStorage.getItem('auth_token');
+  const n=document.getElementById('bookingName'),ph=document.getElementById('bookingPhone'),em=document.getElementById('bookingEmail');
+  if(!token){n.value='';ph.value='';em.value='';return;}
+  try{const a=await initializeAPI();const p=await a.getProfile();n.value=p.name||'';ph.value=p.phone||'';em.value=p.email||'';}
+  catch(e){console.warn(e);}
+}
+
+/* login popup */
+function openLoginPopup(){
+  const o=document.getElementById('loginPopupOverlay');o.classList.add('open');
+  document.getElementById('phoneForm').style.display='block';
+  document.getElementById('otpForm').style.display='none';
+  ['phoneInput','otpInput','nameInput'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('loginError').classList.remove('show');
+}
+function closeLoginPopup(){document.getElementById('loginPopupOverlay').classList.remove('open');}
+async function submitPhoneForm(e){
+  e.preventDefault();
+  const phone=document.getElementById('phoneInput').value.trim();
+  const err=document.getElementById('loginError'),ld=document.getElementById('loginLoading');
+  if(!/^\d{10}$/.test(phone)){err.textContent='Please enter a valid 10-digit phone number';err.classList.add('show');return;}
+  try{ld.style.display='block';err.classList.remove('show');
+    const a=await initializeAPI();await a.sendOTP(phone);
+    sessionStorage.setItem('login_phone',phone);
+    document.getElementById('phoneForm').style.display='none';
+    document.getElementById('otpForm').style.display='block';
+    startResendCountdown();
+  }catch(x){err.textContent=x.message||'Could not send OTP';err.classList.add('show');}
+  finally{ld.style.display='none';}
+}
+async function submitOTPForm(e){
+  e.preventDefault();
+  const phone=sessionStorage.getItem('login_phone');
+  const otp=document.getElementById('otpInput').value.trim();
+  const name=document.getElementById('nameInput').value.trim();
+  const err=document.getElementById('loginError'),ld=document.getElementById('loginLoading');
+  if(!/^\d{4,6}$/.test(otp)){err.textContent='Please enter a valid OTP';err.classList.add('show');return;}
+  try{ld.style.display='block';err.classList.remove('show');
+    const a=await initializeAPI();const r=await a.verifyOTP(phone,otp,name);
+    localStorage.setItem('auth_token',r.token);
+    updateNavbarAuthState();updateCartBadge();loadBookingProfileFields();closeLoginPopup();
+    if(window.onLoginSuccess){window.onLoginSuccess();window.onLoginSuccess=null;}
+  }catch(x){err.textContent=x.message||'OTP verification failed';err.classList.add('show');}
+  finally{ld.style.display='none';}
+}
+async function resendOTP(){
+  const phone=sessionStorage.getItem('login_phone');const err=document.getElementById('loginError');
+  if(!phone){err.textContent='Session expired.';err.classList.add('show');return;}
+  try{const a=await initializeAPI();await a.sendOTP(phone);err.classList.remove('show');startResendCountdown();}
+  catch(x){err.textContent=x.message||'Could not resend OTP';err.classList.add('show');}
+}
+function startResendCountdown(){
+  let s=30;const rb=document.getElementById('resendBtn'),rc=document.getElementById('resendCountdown'),cd=document.getElementById('countdown');
+  rb.style.display='none';rc.style.display='inline';
+  const t=setInterval(()=>{s--;cd.textContent=s;if(s<=0){clearInterval(t);rc.style.display='none';rb.style.display='inline-block';}},1000);
+}
+
+/* ─────────────── Cart storage ─────────────── */
+function getCart(){try{return JSON.parse(localStorage.getItem('vogx_cart')||'[]');}catch{return[];}}
+function saveCart(c){localStorage.setItem('vogx_cart',JSON.stringify(c));updateCartBadge();}
+function updateCartBadge(){const b=document.getElementById('cartBadge');b.textContent=getCart().length;}
+
+/* ─────────────── Toast ─────────────── */
+function toast(msg,kind=''){const r=document.getElementById('toastRack');const t=document.createElement('div');t.className='toast '+kind;t.textContent=msg;r.appendChild(t);setTimeout(()=>t.remove(),3000);}
+
+/* ─────────────── Cart rendering ─────────────── */
+function displayCart(){
+  const cart=getCart();
+  const container=document.getElementById('cartItemsContainer');
+  const formCol=document.getElementById('formCol');
+  const billCard=document.getElementById('billCard');
+  if(!cart.length){
+    container.innerHTML=`
+      <div class="empty" style="border:none;box-shadow:none;padding:32px 20px">
+        <div class="empty__icon"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg></div>
+        <div class="empty__title">Your cart is empty</div>
+        <div class="empty__sub">Add some services to get started.</div>
+        <a href="/services" class="empty__cta">Browse services</a>
+      </div>`;
+    formCol.style.display='none';
+    billCard.style.display='none';
+    updateOrderSummary([]);
+    return;
+  }
+  formCol.style.display='';
+  billCard.style.display='';
+  let html='';
+  cart.forEach((item,i)=>{
+    const qty=item.qty||1;
+    const price=parseFloat(item.price)||0;
+    html+=`
+      <div class="item">
+        <div class="item__thumb">
+          <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 015 5c0 3-2 4-2 7h-6c0-3-2-4-2-7a5 5 0 015-5zM9 17h6M10 21h4"/></svg>
+          <span class="item__qtybadge">${qty}</span>
+        </div>
+        <div class="item__body">
+          <div class="item__name">${item.name}</div>
+          <div class="item__row">
+            <div class="item__qty">
+              <button class="item__qtybtn" onclick="changeQty(${i},-1)" aria-label="Decrease">−</button>
+              <span class="item__qtynum">${qty}</span>
+              <button class="item__qtybtn" onclick="changeQty(${i},1)" aria-label="Increase">+</button>
+            </div>
+            <div class="item__price">₹${(price*qty).toFixed(2)}</div>
+          </div>
+          <button class="item__rm" onclick="removeFromCart(${i})">Remove</button>
+        </div>
+      </div>`;
+  });
+  container.innerHTML=html;
+  updateOrderSummary(cart);
+}
+function changeQty(i,delta){
+  const cart=getCart();if(!cart[i])return;
+  const q=Math.max(1,(cart[i].qty||1)+delta);
+  cart[i].qty=q;saveCart(cart);displayCart();
+}
+function removeFromCart(i){
+  const cart=getCart();const name=cart[i]?.name||'Item';cart.splice(i,1);saveCart(cart);
+  displayCart();toast(`${name} removed`,'ok');
+}
+
+/* ─────────────── Service type (home/salon) ─────────────── */
+let currentDeliveryCharge=0;
+function selectServiceType(v){
+  document.getElementById('serviceType').value=v;
+  document.querySelectorAll('#serviceTypeSeg .seg__opt').forEach(o=>o.classList.toggle('active',o.dataset.value===v));
+  document.getElementById('homeAddressFields').style.display=v==='home'?'block':'none';
+  const s=document.getElementById('salonAddressFields');s.style.display=v==='salon'?'block':'none';
+  if(v==='salon')loadSalonAddress();
+  schedulePincodeValidation();
+  updateOrderSummary(getCart());
+}
+
+/* ─────────────── Pincode ─────────────── */
+let pincodeCheckTimeout=null;
+function setPincodeStatus(msg,ok=false,charge=0){
+  const el=document.getElementById('pincodeStatus');
+  el.textContent=msg;
+  el.className='help '+(msg?(ok?'ok':'error'):'');
+  currentDeliveryCharge=ok?(Number(charge)||0):0;
+  updateOrderSummary(getCart());
+}
+async function validatePincodeServiceability(){
+  const t=document.getElementById('serviceType').value;
+  const p=document.getElementById('bookingPincode').value.trim();
+  if(t!=='home'){setPincodeStatus('',true);return;}
+  if(!p||p.length<6){setPincodeStatus('Enter a valid 6-digit pincode.',false);return;}
+  try{
+    const a=await initializeAPI();const r=await a.checkPincode(p);
+    if(r.serviceable)setPincodeStatus(`✓ Available — home visit charge ₹${parseFloat(r.delivery_charge).toFixed(2)}`,true,r.delivery_charge);
+    else setPincodeStatus("Sorry, we don't currently service this pincode.",false);
+  }catch(e){setPincodeStatus('Unable to verify pincode right now.',false);}
+}
+function schedulePincodeValidation(){clearTimeout(pincodeCheckTimeout);pincodeCheckTimeout=setTimeout(validatePincodeServiceability,500);}
+
+/* ─────────────── Salon address ─────────────── */
+let salonInfoCache=null;
+async function loadSalonAddress(){
+  const box=document.getElementById('salonAddressBox');
+  if(salonInfoCache){renderSalonAddress(salonInfoCache);return;}
+  box.textContent='Loading salon address…';
+  try{
+    const a=await initializeAPI();const resp=await a.getSalonInfo();
+    const results=Array.isArray(resp)?resp:resp.results||[];
+    const s=results.find(x=>x.is_active)||results[0]||null;
+    if(!s){box.textContent='Salon address is not available right now.';return;}
+    salonInfoCache=s;renderSalonAddress(s);
+  }catch(e){box.textContent='Unable to load salon address right now.';}
+}
+function renderSalonAddress(s){
+  const box=document.getElementById('salonAddressBox');
+  box.innerHTML=`
+    <strong>${s.name||'Our Salon'}</strong>
+    ${s.address||''}<br>
+    ${s.city||''}${s.city&&s.state?', ':''}${s.state||''} ${s.zip_code||''}
+    ${s.phone?`<br>📞 ${s.phone}`:''}`;
+}
+
+/* ─────────────── Booking settings ─────────────── */
+async function loadBookingSettings(){
+  try{
+    const a=await initializeAPI();const resp=await a.getSalonSettings();
+    const results=Array.isArray(resp)?resp:resp.results||[];
+    const s=results[0]||null;
+    if(s){ADVANCE_BOOKING_DAYS=Number(s.advance_booking_days)||ADVANCE_BOOKING_DAYS;MIN_BOOKING_NOTICE_HOURS=Number(s.min_booking_notice_hours)||MIN_BOOKING_NOTICE_HOURS;}
+  }catch(e){}
+  const note=`You can book today and up to the next ${ADVANCE_BOOKING_DAYS} day${ADVANCE_BOOKING_DAYS===1?'':'s'}.`+
+    (MIN_BOOKING_NOTICE_HOURS>0?` Same-day slots need at least ${MIN_BOOKING_NOTICE_HOURS} hour${MIN_BOOKING_NOTICE_HOURS===1?'':'s'} notice.`:'');
+  document.getElementById('advanceBookingNote').textContent=note;
+}
+
+/* ─────────────── Day / time picker ─────────────── */
+function pad(n){return String(n).padStart(2,'0');}
+function ymd(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+function formatSlotLabel(t){
+  const [hs,ms]=t.split(':');let h=parseInt(hs,10);const m=ms||'00';const ap=h>=12?'PM':'AM';
+  if(h===0)h=12;if(h>12)h-=12;return `${h}:${m} ${ap}`;
+}
+
+function buildDayList(){
+  const container=document.getElementById('dayList');
+  const today=new Date();today.setHours(0,0,0,0);
+  const days=[];
+  for(let i=0;i<=ADVANCE_BOOKING_DAYS;i++){
+    const d=new Date(today.getTime()+i*86400000);
+    days.push({d,val:ymd(d),
+      dow:i===0?'Today':(i===1?'Tomorrow':d.toLocaleDateString(undefined,{weekday:'short'})),
+      num:d.getDate(),
+      mon:d.toLocaleDateString(undefined,{month:'short'})});
+  }
+  container.innerHTML=days.map(x=>`
+    <button class="day" data-val="${x.val}" onclick="selectDay('${x.val}',this)">
+      <div class="day__dow">${x.dow}</div>
+      <div class="day__num">${x.num}</div>
+      <div class="day__mon">${x.mon}</div>
+    </button>`).join('');
+}
+async function selectDay(val,el){
+  document.querySelectorAll('#dayList .day').forEach(b=>b.classList.toggle('active',b===el));
+  document.getElementById('bookingDate').value=val;
+  document.getElementById('bookingTime').value='';
+  await loadSlotsForDay(val);
+}
+async function loadSlotsForDay(date){
+  const grid=document.getElementById('slotGrid');
+  grid.innerHTML='<div class="slots-empty">Loading available slots…</div>';
+  const cart=getCart();
+  if(!cart.length){grid.innerHTML='<div class="slots-empty">Add a service first.</div>';return;}
+  const serviceId=cart[0].id;
+  try{
+    const a=await initializeAPI();
+    const resp=await a.getTimeSlots(serviceId,date);
+    const slots=Array.isArray(resp)?resp:resp.results||[];
+    if(!slots.length){grid.innerHTML='<div class="slots-empty">No slots available for this day.</div>';return;}
+    grid.innerHTML='';
+    slots.forEach(s=>{
+      const tv=(s.time.includes(':00')&&s.time.split(':').length===3)?s.time.slice(0,5):s.time;
+      const label=formatSlotLabel(tv);
+      const btn=document.createElement('button');btn.type='button';btn.className='slot';btn.textContent=label;
+      btn.onclick=()=>selectSlot(s.time,btn);
+      grid.appendChild(btn);
+    });
+  }catch(e){grid.innerHTML='<div class="slots-empty">Unable to load time slots.</div>';}
+}
+function selectSlot(time,el){
+  document.querySelectorAll('#slotGrid .slot').forEach(b=>b.classList.toggle('active',b===el));
+  document.getElementById('bookingTime').value=time;
+}
+async function loadSalonInfo() {
+  try {
+    const response = await fetch('/api/salon-info/?is_active=true');
+    const data = await response.json();
+    const salon = data.results?.[0] || data;
+    if (!salon) return;
+
+    if (salon.logo) {
+      const img = document.getElementById('navLogoImg');
+      if (img) { img.src = salon.logo; img.alt = salon.name || 'VOGX Salon'; img.style.display = ''; }
+    }
+    if (salon.logo) {
+      const fi = document.getElementById('footerLogoImg');
+      if (fi) { fi.src = salon.logo; fi.alt = salon.name || 'VOGX Salon'; fi.style.display = ''; }
+    }
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+    const setHref = (id, val) => { const el = document.getElementById(id); if (el && val) el.href = val; };
+
+    set('footerTagline', salon.tagline);
+    set('footerPhone',   salon.phone);
+    set('footerEmail',   salon.email);
+    if (salon.address) set('footerAddress', `${salon.address}, ${salon.city || ''}`);
+    setHref('footerInsta', salon.instagram);
+    setHref('footerFb',    salon.facebook);
+    if (salon.phone) setHref('footerWa', `https://wa.me/${salon.phone.replace(/\D/g, '')}`);
+
+    const copy = document.getElementById('footerCopy');
+    if (copy) copy.textContent = `© ${new Date().getFullYear()} ${salon.name || 'VOGX Salon'}. All rights reserved.`;
+  } catch (err) { console.error(err); }
+}
+/* ─────────────── Bill summary ─────────────── */
+function updateOrderSummary(cart){
+  const subEl=document.getElementById('summarySubtotal');
+  const chEl=document.getElementById('serviceCharge');
+  const totEl=document.getElementById('summaryTotal');
+  const cnt=document.getElementById('billItemCount');
+  const chRow=document.getElementById('homeChargeRow');
+  if(!cart||!cart.length){
+    subEl.textContent='₹0.00';chEl.textContent='₹0.00';totEl.textContent='₹0.00';cnt.textContent='0';
+    chRow.style.display='none';return;
+  }
+  let items=0,sub=0;
+  cart.forEach(it=>{const q=it.qty||1;items+=q;sub+=(parseFloat(it.price)||0)*q;});
+  const stype=document.getElementById('serviceType').value;
+  const homeCharge=stype==='home'?currentDeliveryCharge:0;
+  chRow.style.display=(stype==='home')?'flex':'none';
+  subEl.textContent='₹'+sub.toFixed(2);
+  chEl.textContent='₹'+homeCharge.toFixed(2);
+  totEl.textContent='₹'+(sub+homeCharge).toFixed(2);
+  cnt.textContent=items;
+}
+
+/* ─────────────── Payment method selector ─────────────── */
+function selectPaymentMethod(v){
+  document.getElementById('paymentMethod').value=v;
+  document.querySelectorAll('#paymentMethods .pm__opt').forEach(o=>o.classList.toggle('active',o.dataset.pm===v));
+  document.getElementById('pmInfo').textContent=v==='online'
+    ? "You'll be redirected to Cards, UPI, NB, Wallets, EMI by Razorpay to complete your purchase."
+    : "You'll pay in cash or by UPI at the end of your appointment.";
+}
+
+/* ─────────────── Policy modals ─────────────── */
+function openPolicy(id,e){if(e)e.preventDefault();document.getElementById(id).classList.add('open');}
+function closePolicy(id){document.getElementById(id).classList.remove('open');}
+
+/* ─────────────── Payment (Razorpay) ─────────────── */
+async function payForGroupCombined(group){
+  const a=await initializeAPI();
+  const orderResp=await a.request('/payments/create-combined-order/','POST',{group_id:group.id});
+  return new Promise((resolve,reject)=>{
+    const rzp=new Razorpay({
+      key:orderResp.key,amount:orderResp.amount*100,currency:orderResp.currency,order_id:orderResp.order_id,
+      name:'VOGX Salon',description:`Payment for ${group.bookings.length} service(s)`,
+      handler:async r=>{try{await a.request('/payments/verify-combined-payment/','POST',{razorpay_order_id:r.razorpay_order_id,razorpay_payment_id:r.razorpay_payment_id,razorpay_signature:r.razorpay_signature});resolve(true);}catch(e){reject(e);}},
+      prefill:{name:document.getElementById('bookingName').value.trim(),contact:document.getElementById('bookingPhone').value.trim()},
+      theme:{color:'#c2185b'},
+      modal:{ondismiss:()=>reject(new Error('Payment cancelled'))}
+    });
+    rzp.open();
+  });
+}
+function showBookingConfirmedModal(group,method){
+  const msg=method==='online'
+    ?`Payment received — your booking for ${group.bookings.length} service(s) on ${new Date(group.booking_date).toLocaleDateString()} is confirmed.`
+    :`Your booking for ${group.bookings.length} service(s) on ${new Date(group.booking_date).toLocaleDateString()} is confirmed. You can pay after the service.`;
+  document.getElementById('bookingConfirmedMessage').textContent=msg;
+  document.getElementById('bookingConfirmedOverlay').classList.add('open');
+}
+function closeBookingConfirmedModal(){
+  document.getElementById('bookingConfirmedOverlay').classList.remove('open');
+  ['bookingNotes','bookingPincode','bookingHouseNumber','bookingStreetArea','bookingLandmark','bookingDate','bookingTime'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('#dayList .day, #slotGrid .slot').forEach(b=>b.classList.remove('active'));
+  displayCart();updateCartBadge();
+}
+
+/* ─────────────── Confirm booking ─────────────── */
+async function confirmBooking(){
+  const cart=getCart();
+  if(!cart.length){alert('Your cart is empty!');return;}
+  const name=document.getElementById('bookingName').value.trim();
+  const email=document.getElementById('bookingEmail').value.trim();
+  const stype=document.getElementById('serviceType').value;
+  if(!name){toast('Please enter your name','err');return;}
+  if(!email){toast('Please enter your email','err');return;}
+  const bDate=document.getElementById('bookingDate').value;
+  const bTime=document.getElementById('bookingTime').value;
+  if(!bDate||!bTime){toast('Please choose a day and time slot','err');return;}
+  const pincode=document.getElementById('bookingPincode').value.trim();
+  const house=document.getElementById('bookingHouseNumber').value.trim();
+  const street=document.getElementById('bookingStreetArea').value.trim();
+  const landmark=document.getElementById('bookingLandmark').value.trim();
+  const notes=document.getElementById('bookingNotes').value.trim();
+  if(stype==='home'&&(!pincode||!house||!street)){toast('Please fill pincode, house number and street/area','err');return;}
+  const token=localStorage.getItem('auth_token');
+  if(!token){window.onLoginSuccess=confirmBooking;openLoginPopup();return;}
+  const a=await initializeAPI();
+  const btn=document.getElementById('confirmBtn');
+  try{
+    btn.disabled=true;btn.innerHTML='Processing…';
+    const payload={
+      service_ids:cart.filter(i=>i.type==='service').flatMap(i=>Array(i.qty||1).fill(i.id)),
+      package_ids:cart.filter(i=>i.type==='package').flatMap(i=>Array(i.qty||1).fill(i.id)),
+      booking_date:bDate,booking_time:bTime,booking_type:stype,notes,name,email
+    };
+    if(stype==='home'){payload.pincode=pincode;payload.house_number=house;payload.street_area=street;if(landmark)payload.landmark=landmark;}
+    const group=await a.request('/bookings/booking-groups/','POST',payload);
+    localStorage.removeItem('vogx_cart');updateCartBadge();
+    const method=document.getElementById('paymentMethod').value;
+    if(method==='online'){
+      try{await payForGroupCombined(group);showBookingConfirmedModal(group,'online');}
+      catch(err){toast(err.message||'Payment failed','err');}
+    }else{
+      try{await a.request('/payments/confirm-pay-later/','POST',{group_id:group.id});showBookingConfirmedModal(group,'pay_later');}
+      catch(err){toast(err.message||'Could not confirm','err');}
+    }
+  }catch(err){toast('Failed to confirm booking: '+err.message,'err');}
+  finally{btn.disabled=false;btn.innerHTML='Confirm booking <svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';}
+}
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadSalonInfo();
+});
+/* ─────────────── Boot ─────────────── */
+document.addEventListener('click',e=>{
+  ['loginPopupOverlay','bookingConfirmedOverlay','cancelPolicyModal','privacyModal','termsModal','paymentMethodOverlay'].forEach(id=>{
+    const el=document.getElementById(id);if(e.target===el)el.classList.remove('open');
+  });
+});
+
+document.addEventListener('DOMContentLoaded',async ()=>{
+  await initializeAPI();
+  updateNavbarAuthState();updateCartBadge();
+  loadBookingProfileFields();
+  displayCart();
+  selectServiceType('home');
+  await loadBookingSettings();
+  buildDayList();
+  const pin=document.getElementById('bookingPincode');
+  if(pin)pin.addEventListener('input',schedulePincodeValidation);
+});
+</script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

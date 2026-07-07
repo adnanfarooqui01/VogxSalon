@@ -10,14 +10,14 @@ class TimeSlotAdmin(admin.ModelAdmin):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'service', 'booking_date', 'booking_time', 'status', 'booking_type', 'is_paid', 'total_price')
-    search_fields = ('user__phone', 'user__name', 'service__name', 'id')
-    list_filter = ('status', 'booking_type', 'is_paid', 'booking_date', 'created_at')
+    list_display = ('id', 'user', 'service', 'package', 'booking_date', 'booking_time', 'status', 'booking_type', 'is_paid', 'total_price')
+    search_fields = ('user__phone', 'user__name', 'service__name', 'package__name', 'id')
+    list_filter = ('status', 'booking_type', 'is_paid', 'booking_date', 'created_at', 'package')
     list_editable = ('status', 'is_paid')
     readonly_fields = ('created_at', 'updated_at', 'completed_at')
     fieldsets = (
         ('Booking Details', {
-            'fields': ('user', 'service', 'booking_date', 'booking_time', 'duration_minutes', 'booking_type')
+            'fields': ('user', 'service', 'package', 'booking_date', 'booking_time', 'duration_minutes', 'booking_type')
         }),
         ('Home Visit Address', {
             'fields': ('pincode', 'house_number', 'street_area', 'landmark'),
@@ -39,8 +39,8 @@ class BookingAdmin(admin.ModelAdmin):
 class BookingInline(admin.TabularInline):
     model = Booking
     extra = 0
-    fields = ('service', 'total_price', 'status')
-    readonly_fields = ('service', 'total_price', 'status')
+    fields = ('service', 'package', 'total_price', 'status')
+    readonly_fields = ('service', 'package', 'total_price', 'status')
     can_delete = False
 
 @admin.register(BookingGroup)

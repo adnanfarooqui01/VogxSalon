@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.core.models import ServiceablePincode
-from apps.services.models import Service
+from apps.services.models import Service, Package
 from django.db import transaction 
 from .models import TimeSlot, Booking, BookingGroup
 
@@ -16,6 +16,8 @@ class BookingSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source='service.name', read_only=True)
     service_price = serializers.DecimalField(source='service.price', max_digits=10, decimal_places=2, read_only=True)
     payment_status = serializers.SerializerMethodField()
+    package_name = serializers.CharField(source='package.name', read_only=True, default=None)
+    package_price = serializers.DecimalField(source='package.package_price', max_digits=10, decimal_places=2, read_only=True, default=None)
 
     class Meta:
         model = Booking
@@ -26,6 +28,9 @@ class BookingSerializer(serializers.ModelSerializer):
             'service',
             'service_name',
             'service_price',
+            'package',
+            'package_name',
+            'package_price',
             'booking_date',
             'booking_time',
             'duration_minutes',
@@ -52,6 +57,9 @@ class BookingSerializer(serializers.ModelSerializer):
             'user_name',
             'service_name',
             'service_price',
+            'package',
+            'package_name',
+            'package_price',
             'duration_minutes',
             'total_price',
             'status',
@@ -118,7 +126,11 @@ class BookingCancelSerializer(serializers.Serializer):
 
 
 class BookingGroupCreateSerializer(serializers.Serializer):
-    service_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
+    # Relaxed from allow_empty=False — a checkout can now be packages-only,
+    # with no standalone services at all. The combined "must have at least
+    # one of service_ids/package_ids" check lives in validate() below.
+    service_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
+    package_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
     booking_date = serializers.DateField()
     booking_time = serializers.TimeField()
     booking_type = serializers.ChoiceField(choices=Booking.BOOKING_TYPE_CHOICES)
@@ -135,6 +147,12 @@ class BookingGroupCreateSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True)
 
     def validate(self, attrs):
+        # Cart must contain at least one service or package.
+        if not attrs.get('service_ids') and not attrs.get('package_ids'):
+            raise serializers.ValidationError(
+                {'service_ids': 'Add at least one service or package before booking.'}
+            )
+
         if attrs['booking_type'] == 'home':
             pincode = attrs.get('pincode')
             if not pincode:
@@ -171,12 +189,18 @@ class BookingGroupCreateSerializer(serializers.Serializer):
         if update_fields:
             user.save(update_fields=update_fields)
 
-        service_ids = validated_data.pop('service_ids')
+        service_ids = validated_data.pop('service_ids', []) or []
+        package_ids = validated_data.pop('package_ids', []) or []
+
         services = list(Service.objects.filter(id__in=service_ids))
         if len(services) != len(service_ids):
             raise serializers.ValidationError({'service_ids': 'One or more services not found.'})
 
-        subtotal = sum(s.price for s in services)
+        packages = list(Package.objects.prefetch_related('services').filter(id__in=package_ids))
+        if len(packages) != len(package_ids):
+            raise serializers.ValidationError({'package_ids': 'One or more packages not found.'})
+
+        subtotal = sum(s.price for s in services) + sum(p.package_price for p in packages)
         service_charge = 0
         if validated_data['booking_type'] == 'home':
             serviceable = ServiceablePincode.objects.filter(pincode=validated_data.get('pincode'), is_active=True).first()
@@ -220,6 +244,32 @@ class BookingGroupCreateSerializer(serializers.Serializer):
                     status='confirmed',
                 )
 
+            # Packages — create one Booking row per included service so
+            # Admin / My Bookings show exactly what's inside the package.
+            # Each row is priced at 0 (not billed individually) since the
+            # package's own `package_price` is already folded into
+            # `subtotal`/`total_price` above; `package_price` is still
+            # exposed via BookingSerializer/BookingGroupSerializer for display.
+            for package in packages:
+                for service in package.services.all():
+                    Booking.objects.create(
+                        group=group,
+                        user=request.user,
+                        service=service,
+                        package=package,
+                        booking_date=validated_data['booking_date'],
+                        booking_time=validated_data['booking_time'],
+                        duration_minutes=service.duration_minutes,
+                        total_price=0,
+                        booking_type=validated_data['booking_type'],
+                        pincode=validated_data.get('pincode'),
+                        house_number=validated_data.get('house_number'),
+                        street_area=validated_data.get('street_area'),
+                        landmark=validated_data.get('landmark'),
+                        notes=validated_data.get('notes', ''),
+                        status='confirmed',
+                    )
+
         return group
 
 
@@ -247,8 +297,11 @@ class BookingGroupSerializer(serializers.ModelSerializer):
                 'service_id': b.service.id,
                 'service_name': b.service.name,
                 'price': b.total_price,
+                'package_id': b.package_id,
+                'package_name': b.package.name if b.package_id else None,
+                'package_price': b.package.package_price if b.package_id else None,
             }
-            for b in obj.bookings.select_related('service').all()
+            for b in obj.bookings.select_related('service', 'package').all()
         ]
 
     def get_payment_status(self, obj):

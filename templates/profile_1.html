@@ -1,0 +1,1146 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrftoken" content="{{ csrf_token }}">
+  <title>My Profile — VOGX Salon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── TOKENS (from VOGX theme) ───────────────────── */
+    :root{
+      --brand:#c2185b; --brand-dark:#7a0d3a; --brand-light:#f8bbd0; --brand-tint:#fdf1f6;
+      --ink:#14100f; --ink-2:#2b2422;
+      --gray-1:#3d3634; --gray-2:#6b6260; --gray-3:#a49b98; --gray-4:#d8d1ce; --gray-5:#f2ede9;
+      --cream:#faf6f2; --white:#ffffff;
+      --success:#1f9d52; --success-bg:#e6f7ec;
+      --warn:#856404;   --warn-bg:#fff3cd;
+      --info:#4b3f99;   --info-bg:#e2e3ff;
+      --danger:#c93a3a; --danger-bg:#fce8ea;
+      --radius:18px; --radius-sm:12px; --radius-lg:28px;
+      --shadow:0 1px 2px rgba(20,16,15,.04), 0 8px 24px rgba(20,16,15,.06);
+      --shadow-md:0 8px 28px rgba(20,16,15,.12);
+      --shadow-lg:0 24px 60px rgba(20,16,15,.18);
+      --nav-h:72px; --max:1180px;
+      --transition:.25s cubic-bezier(.2,.7,.2,1);
+      --serif:'Fraunces', ui-serif, Georgia, serif;
+      --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:var(--sans); color:var(--ink); background:var(--cream);
+      padding-top:var(--nav-h);
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+      min-height:100vh;
+    }
+    a{color:inherit;text-decoration:none}
+    button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+    ul{list-style:none}
+    input,select,textarea{font-family:inherit}
+
+    .container{max-width:var(--max); margin:0 auto; padding:0 clamp(16px,3vw,32px)}
+
+    /* ── NAV ────────────────────────────────────────── */
+    .nav{
+      position:fixed; inset:0 0 auto 0; height:var(--nav-h);
+      background:rgba(250,246,242,.82);
+      backdrop-filter:saturate(160%) blur(14px);
+      -webkit-backdrop-filter:saturate(160%) blur(14px);
+      border-bottom:1px solid rgba(20,16,15,.06);
+      z-index:900; display:flex; align-items:center;
+    }
+    .nav__inner{
+      max-width:var(--max); width:100%; margin:0 auto;
+      padding:0 clamp(16px,3vw,32px);
+      display:flex; align-items:center; justify-content:space-between; gap:16px;
+    }
+    .nav__logo {
+      display:inline-flex; align-items:center; justify-content:center;
+      flex-shrink:0; height:44px;
+    }
+    .nav__logo-img {
+      display:block;
+      max-height:44px;
+      width:auto;
+      max-width:140px;
+      object-fit:contain;
+      border-radius:0;
+      background:transparent;
+    }
+    .nav__logo-text {
+      font-family:var(--serif); font-size:22px; font-weight:600;
+      color:var(--ink); letter-spacing:-.01em;
+      margin-left:8px;
+    }
+    .nav__logo-text em { color:var(--brand); font-style:italic; font-weight:500; }
+    .nav__right{display:flex; align-items:center; gap:12px}
+    .nav__link{
+      padding:9px 16px; border-radius:999px; font-size:13px; font-weight:600;
+      color:var(--gray-1); transition:background var(--transition), color var(--transition);
+    }
+    .nav__link:hover{background:var(--gray-5); color:var(--ink)}
+    @media (max-width:520px){ .nav__link.services-link{display:none} }
+
+    .nav__profile{position:relative}
+    .nav__profile-btn{
+      width:40px; height:40px; border-radius:50%;
+      background:var(--brand-tint);
+      display:flex; align-items:center; justify-content:center;
+      transition:background var(--transition);
+    }
+    .nav__profile-btn:hover{background:var(--brand-light)}
+    .nav__profile-btn svg{width:20px;height:20px;stroke:var(--brand);fill:none;stroke-width:1.8}
+    .nav__dropdown{
+      position:absolute; top:calc(100% + 12px); right:0;
+      min-width:220px; background:var(--white);
+      border:1px solid var(--gray-4); border-radius:var(--radius-sm);
+      box-shadow:var(--shadow-md); overflow:hidden;
+      display:none; z-index:999;
+    }
+    .nav__dropdown.open{display:block}
+    .nav__dropdown a, .nav__dropdown button{
+      display:flex; align-items:center; gap:12px;
+      width:100%; padding:13px 18px;
+      font-size:14px; color:var(--gray-1); text-align:left;
+      transition:background var(--transition);
+    }
+    .nav__dropdown a:hover, .nav__dropdown button:hover{background:var(--gray-5)}
+    .nav__dropdown button.logout{color:var(--brand)}
+    .nav__dropdown-divider{height:1px;background:var(--gray-5)}
+    .nav__dropdown svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0}
+
+    /* ── PAGE HEADER (Hero band) ────────────────────── */
+    .page-hero{
+      margin:clamp(16px,2.5vw,28px) auto 0;
+      max-width:var(--max);
+      padding:0 clamp(16px,3vw,32px);
+    }
+    .page-hero__card{
+      position:relative; overflow:hidden;
+      border-radius:var(--radius-lg);
+      background:
+        radial-gradient(120% 90% at 100% 0%, rgba(194,24,91,.35), transparent 60%),
+        radial-gradient(120% 90% at 0% 100%, rgba(248,187,208,.28), transparent 60%),
+        linear-gradient(135deg, #241b1e 0%, #14100f 100%);
+      color:var(--white);
+      padding:clamp(28px,5vw,56px) clamp(24px,5vw,56px);
+      box-shadow:var(--shadow-lg);
+    }
+    .page-hero__eyebrow{
+      display:inline-flex; align-items:center; gap:10px;
+      font-size:11px; font-weight:700; letter-spacing:.3em;
+      text-transform:uppercase; color:var(--brand-light);
+      margin-bottom:14px;
+    }
+    .page-hero__eyebrow::before{content:"";width:32px;height:1px;background:currentColor}
+    .page-hero h1{
+      font-family:var(--serif);
+      font-size:clamp(30px,5vw,52px); font-weight:500;
+      letter-spacing:-.02em; line-height:1.02;
+      color:var(--white);
+    }
+    .page-hero h1 em{font-style:italic; color:var(--brand-light); font-weight:400}
+    .page-hero__meta{
+      margin-top:12px; font-size:14px; color:rgba(255,255,255,.75);
+      display:flex; gap:14px; flex-wrap:wrap; align-items:center;
+    }
+    .page-hero__chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 12px; border-radius:999px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.2);
+      font-size:12px; font-weight:500;
+    }
+    .page-hero__chip svg{width:14px;height:14px;stroke:var(--brand-light);fill:none;stroke-width:2}
+
+    /* ── TABS ───────────────────────────────────────── */
+    .tabs-wrap{
+      max-width:var(--max); margin:clamp(20px,3vw,32px) auto 0;
+      padding:0 clamp(16px,3vw,32px);
+    }
+    .tabs{
+      display:flex; gap:6px; padding:6px;
+      background:var(--white); border:1px solid var(--gray-4);
+      border-radius:999px; box-shadow:var(--shadow);
+      overflow-x:auto; scrollbar-width:none;
+    }
+    .tabs::-webkit-scrollbar{display:none}
+    .tab-btn{
+      flex:1; min-width:max-content;
+      padding:11px 20px; border-radius:999px;
+      font-size:13.5px; font-weight:600; color:var(--gray-2);
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      transition:background var(--transition), color var(--transition);
+      white-space:nowrap;
+    }
+    .tab-btn:hover{color:var(--ink)}
+    .tab-btn.active{background:var(--ink); color:var(--white)}
+    .tab-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8}
+
+    /* ── LAYOUT ─────────────────────────────────────── */
+    .main{
+      max-width:var(--max); margin:0 auto;
+      padding:clamp(20px,3vw,36px) clamp(16px,3vw,32px) 80px;
+    }
+    .tab-content{display:none}
+    .tab-content.show{display:block; animation:fade .3s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+    /* ── CARDS ──────────────────────────────────────── */
+    .card{
+      background:var(--white); border:1px solid var(--gray-4);
+      border-radius:var(--radius);
+      padding:clamp(20px,3vw,32px);
+      box-shadow:var(--shadow);
+    }
+    .card + .card{margin-top:20px}
+    .card__head{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:16px; margin-bottom:20px; flex-wrap:wrap;
+    }
+    .card__title{
+      font-family:var(--serif); font-size:clamp(22px,2.6vw,28px);
+      font-weight:500; letter-spacing:-.01em; color:var(--ink);
+    }
+    .card__title em{font-style:italic; color:var(--brand); font-weight:400}
+    .card__sub{font-size:13.5px; color:var(--gray-2); margin-top:4px}
+
+    /* ── FORMS ──────────────────────────────────────── */
+    .form-grid{
+      display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:clamp(14px,2vw,20px);
+    }
+    @media (max-width:640px){ .form-grid{grid-template-columns:1fr} }
+    .field{display:flex; flex-direction:column; gap:6px; min-width:0}
+    .field label{
+      font-size:12px; font-weight:600; color:var(--gray-1);
+      letter-spacing:.06em; text-transform:uppercase;
+    }
+    .field input, .field select, .field textarea{
+      width:100%; padding:12px 14px;
+      background:var(--cream); border:1px solid var(--gray-4);
+      border-radius:var(--radius-sm);
+      font-size:14.5px; color:var(--ink);
+      transition:border-color var(--transition), background var(--transition), box-shadow var(--transition);
+    }
+    .field input:focus, .field select:focus, .field textarea:focus{
+      outline:none; border-color:var(--brand);
+      background:var(--white);
+      box-shadow:0 0 0 4px rgba(194,24,91,.10);
+    }
+    .field input:disabled{
+      background:var(--gray-5); color:var(--gray-2); cursor:not-allowed;
+    }
+    .field small{font-size:12px; color:var(--gray-3); line-height:1.5}
+    .field textarea{resize:vertical; min-height:90px}
+
+    .actions{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:24px; padding-top:20px;
+      border-top:1px dashed var(--gray-4);
+    }
+
+    /* ── BUTTONS ────────────────────────────────────── */
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding:12px 22px; border-radius:999px;
+      font-size:13.5px; font-weight:600; letter-spacing:.01em;
+      transition:background var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition);
+      white-space:nowrap;
+    }
+    .btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+    .btn-primary{background:var(--ink); color:var(--white)}
+    .btn-primary:hover{background:var(--brand); transform:translateY(-1px)}
+    .btn-secondary{background:transparent; color:var(--ink); border:1.5px solid var(--gray-4)}
+    .btn-secondary:hover{border-color:var(--ink); background:var(--gray-5)}
+    .btn-ghost{background:var(--brand-tint); color:var(--brand)}
+    .btn-ghost:hover{background:var(--brand-light)}
+    .btn-danger{background:var(--danger); color:var(--white)}
+    .btn-danger:hover{background:#a92d2d; transform:translateY(-1px)}
+    .btn-outline-danger{background:transparent; color:var(--danger); border:1.5px solid var(--danger)}
+    .btn-outline-danger:hover{background:var(--danger); color:var(--white)}
+    .btn:disabled{opacity:.6; cursor:not-allowed; transform:none}
+    .btn-sm{padding:9px 16px; font-size:12.5px}
+    .btn-block{width:100%}
+
+    /* ── ALERTS ─────────────────────────────────────── */
+    .alerts{margin-bottom:16px; display:flex; flex-direction:column; gap:10px}
+    .alert{
+      padding:12px 16px; border-radius:var(--radius-sm);
+      font-size:14px; display:flex; align-items:flex-start; gap:10px;
+      border:1px solid transparent;
+    }
+    .alert.success{background:var(--success-bg); color:var(--success); border-color:rgba(31,157,82,.2)}
+    .alert.error{background:var(--danger-bg); color:var(--danger); border-color:rgba(201,58,58,.2)}
+
+    /* ── EMPTY / LOADING ────────────────────────────── */
+    .empty{
+      text-align:center; padding:clamp(40px,6vw,72px) 20px;
+      color:var(--gray-2);
+    }
+    .empty__icon{
+      width:72px; height:72px; margin:0 auto 16px;
+      border-radius:50%; background:var(--brand-tint);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .empty__icon svg{width:32px;height:32px;stroke:var(--brand);fill:none;stroke-width:1.6}
+    .empty h3{font-family:var(--serif); font-size:22px; font-weight:500; color:var(--ink); margin-bottom:8px}
+    .empty p{font-size:14px; color:var(--gray-2); max-width:340px; margin:0 auto}
+    .skeleton-list{display:flex; flex-direction:column; gap:16px}
+    .skeleton{
+      height:120px; border-radius:var(--radius);
+      background:linear-gradient(90deg, var(--gray-5) 0%, #eee6e0 50%, var(--gray-5) 100%);
+      background-size:200% 100%; animation:shimmer 1.4s infinite;
+    }
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    /* ── BOOKING LIST ───────────────────────────────── */
+    .bk-list{display:flex; flex-direction:column; gap:16px}
+    .bk-card{
+      background:var(--white);
+      border:1px solid var(--gray-4);
+      border-radius:var(--radius);
+      padding:clamp(18px,2.5vw,24px);
+      box-shadow:var(--shadow);
+      transition:box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+    }
+    .bk-card:hover{box-shadow:var(--shadow-md); border-color:var(--gray-3)}
+    .bk-card__top{
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:12px; margin-bottom:14px; flex-wrap:wrap;
+    }
+    .bk-card__id{
+      font-family:var(--serif); font-size:18px; font-weight:600;
+      color:var(--ink); letter-spacing:-.01em;
+    }
+    .bk-card__sub{font-size:12.5px; color:var(--gray-2); margin-top:2px}
+    .bk-status{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:5px 12px; border-radius:999px;
+      font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    }
+    .bk-status::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+    .bk-status.confirmed{background:var(--success-bg); color:var(--success)}
+    .bk-status.pending{background:var(--warn-bg); color:var(--warn)}
+    .bk-status.completed{background:var(--info-bg); color:var(--info)}
+    .bk-status.cancelled{background:var(--danger-bg); color:var(--danger)}
+
+    .bk-meta{
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+      gap:10px 16px; margin-bottom:14px;
+    }
+    .bk-meta__item{display:flex; align-items:center; gap:10px; min-width:0}
+    .bk-meta__ic{
+      width:34px; height:34px; border-radius:10px;
+      background:var(--brand-tint); color:var(--brand);
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .bk-meta__ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8}
+    .bk-meta__k{font-size:11px; color:var(--gray-3); letter-spacing:.06em; text-transform:uppercase}
+    .bk-meta__v{font-size:14px; color:var(--ink); font-weight:600; margin-top:1px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+
+    .bk-total{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding-top:14px; border-top:1px dashed var(--gray-4);
+      flex-wrap:wrap;
+    }
+    .bk-total__amt{
+      font-family:var(--serif); font-size:22px; font-weight:600;
+      color:var(--ink); letter-spacing:-.01em;
+    }
+    .bk-total__lbl{font-size:11px; color:var(--gray-3); letter-spacing:.08em; text-transform:uppercase}
+
+    .bk-actions{
+      display:flex; gap:8px; flex-wrap:wrap;
+      margin-top:14px;
+    }
+
+    /* ── MODAL ──────────────────────────────────────── */
+    .modal{
+      display:none; position:fixed; inset:0; z-index:2000;
+      background:rgba(20,16,15,.55); backdrop-filter:blur(4px);
+      align-items:flex-end; justify-content:center;
+      padding:0;
+    }
+    .modal.active{display:flex; animation:fade .2s ease}
+    .modal__box{
+      background:var(--white);
+      border-top-left-radius:var(--radius-lg);
+      border-top-right-radius:var(--radius-lg);
+      width:100%; max-width:560px;
+      max-height:90vh; overflow-y:auto;
+      box-shadow:var(--shadow-lg);
+      animation:slideUp .3s cubic-bezier(.2,.7,.2,1);
+    }
+    @keyframes slideUp{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+    @media (min-width:640px){
+      .modal{align-items:center; padding:24px}
+      .modal__box{border-radius:var(--radius-lg)}
+    }
+    .modal__head{
+      position:sticky; top:0; z-index:2;
+      background:var(--white);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:20px clamp(20px,4vw,28px);
+      border-bottom:1px solid var(--gray-5);
+    }
+    .modal__title{
+      font-family:var(--serif); font-size:22px; font-weight:600;
+      color:var(--ink); letter-spacing:-.01em;
+    }
+    .modal__close{
+      width:38px; height:38px; border-radius:50%;
+      background:var(--gray-5); display:flex; align-items:center; justify-content:center;
+      transition:background var(--transition);
+    }
+    .modal__close:hover{background:var(--gray-4)}
+    .modal__close svg{width:18px;height:18px;stroke:var(--ink);fill:none;stroke-width:2}
+    .modal__body{padding:clamp(20px,4vw,28px)}
+    .modal__foot{
+      padding:16px clamp(20px,4vw,28px);
+      border-top:1px solid var(--gray-5);
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+      background:var(--cream);
+    }
+
+    /* ── DETAIL MODAL ───────────────────────────────── */
+    .det-section{margin-bottom:22px}
+    .det-section:last-child{margin-bottom:0}
+    .det-h{
+      font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+      color:var(--gray-3); margin-bottom:10px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .det-h::after{content:""; flex:1; height:1px; background:var(--gray-5)}
+
+    .det-status-row{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      flex-wrap:wrap; margin-bottom:20px;
+      padding:14px 16px; border-radius:var(--radius-sm);
+      background:var(--cream); border:1px solid var(--gray-5);
+    }
+    .det-order{font-family:var(--serif); font-size:19px; font-weight:600; color:var(--ink)}
+
+    .det-info{
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+      gap:14px;
+    }
+    .det-info__cell{
+      padding:12px 14px; border-radius:var(--radius-sm);
+      background:var(--cream); border:1px solid var(--gray-5);
+    }
+    .det-info__k{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--gray-3)}
+    .det-info__v{font-size:14.5px; color:var(--ink); font-weight:600; margin-top:4px; word-break:break-word}
+
+    .det-svc{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:12px 14px; border-radius:var(--radius-sm);
+      background:var(--cream); border:1px solid var(--gray-5);
+    }
+    .det-svc + .det-svc{margin-top:8px}
+    .det-svc__name{font-size:14px; color:var(--ink); font-weight:500}
+    .det-svc__qty{font-size:12px; color:var(--gray-2); margin-top:2px}
+    .det-svc__price{font-family:var(--serif); font-weight:600; color:var(--ink); font-size:15px}
+
+    .det-pkg{
+      padding:12px 14px; border-radius:var(--radius-sm);
+      background:var(--cream); border:1px solid var(--gray-5);
+    }
+    .det-pkg + .det-pkg, .det-svc + .det-pkg, .det-pkg + .det-svc{margin-top:8px}
+    .det-pkg__head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+    .det-pkg__badge{
+      display:inline-block; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+      color:var(--brand); background:var(--brand-tint); border-radius:999px; padding:2px 8px; margin-bottom:4px;
+    }
+    .det-pkg__name{font-size:14px; color:var(--ink); font-weight:600}
+    .det-pkg__price{font-family:var(--serif); font-weight:600; color:var(--ink); font-size:15px; white-space:nowrap}
+    .det-pkg__svcs{margin-top:10px; padding-top:10px; border-top:1px dashed var(--gray-4); display:flex; flex-direction:column; gap:6px}
+    .det-pkg__svc{font-size:13px; color:var(--gray-2); padding-left:16px; position:relative}
+    .det-pkg__svc::before{content:"•"; position:absolute; left:2px; color:var(--gray-3)}
+
+    .bill{
+      background:var(--cream); border:1px solid var(--gray-5);
+      border-radius:var(--radius-sm); padding:16px 18px;
+    }
+    .bill__row{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 0; font-size:14px; color:var(--gray-1);
+    }
+    .bill__row.total{
+      margin-top:6px; padding-top:14px;
+      border-top:1px dashed var(--gray-4);
+      font-family:var(--serif); font-size:20px; font-weight:600; color:var(--ink);
+    }
+    .bill__note{
+      margin-top:10px; font-size:11.5px; color:var(--gray-3); line-height:1.55;
+    }
+
+    .det-note{
+      padding:12px 14px; border-radius:var(--radius-sm);
+      background:var(--brand-tint); border:1px solid rgba(194,24,91,.15);
+      font-size:14px; color:var(--ink-2); line-height:1.55;
+    }
+    .det-cancel{
+      padding:14px 16px; border-radius:var(--radius-sm);
+      background:var(--danger-bg); border:1px solid rgba(201,58,58,.2);
+      color:var(--danger);
+    }
+    .det-cancel__reason{font-weight:700; font-size:14px}
+    .det-cancel__note{font-size:13.5px; margin-top:6px; color:#7a2626; line-height:1.55}
+    .det-cancel__when{font-size:11.5px; margin-top:8px; color:rgba(201,58,58,.75); letter-spacing:.04em}
+
+    /* ── SR-ONLY ────────────────────────────────────── */
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+    /* ── FOOTER ─────────────────────────────────────── */
+    .footer{
+      margin-top:60px; padding:32px 20px;
+      background:var(--ink); color:rgba(255,255,255,.7);
+      text-align:center; font-size:13px;
+    }
+    .footer em{font-family:var(--serif); font-style:italic; color:var(--brand-light)}
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ─────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav__inner">
+    <a href="/" class="nav__logo" id="navLogo">
+      <img class="nav__logo-img" id="navLogoImg" src="" alt="VOGX Salon" style="display:none;">
+    </a>
+    <div class="nav__links">
+      <a href="/services" class="nav__link services-link">Services</a>
+      <div class="nav__profile">
+        <button id="profileBtn" class="nav__profile-btn" aria-label="Profile menu">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+        <div id="profileDropdown" class="nav__dropdown" role="menu">
+          <a href="/profile"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>My Profile</a>
+          <a href="/profile?tab=current"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Current Bookings</a>
+          <a href="/profile?tab=bookings"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Booking History</a>
+          <div class="nav__dropdown-divider"></div>
+          <button type="button" class="logout" id="dropdownLogoutBtn">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+            Log out
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ────────────────────────────────────────── -->
+<section class="page-hero">
+  <div class="page-hero__card">
+    <span class="page-hero__eyebrow">Your Account</span>
+    <h1>My <em>Profile</em></h1>
+    <div class="page-hero__meta">
+      <span id="phoneDisplay" class="page-hero__chip">
+        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.28-1.27a2 2 0 0 1 2.11-.45c.9.34 1.84.57 2.8.7A2 2 0 0 1 22 16.92z"/></svg>
+        Welcome back!
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ── TABS ────────────────────────────────────────── -->
+<div class="tabs-wrap">
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="profile" role="tab">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </button>
+    <button class="tab-btn" data-tab="current" role="tab">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Current Bookings
+    </button>
+    <button class="tab-btn" data-tab="bookings" role="tab">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      History
+    </button>
+  </div>
+</div>
+
+<!-- ── MAIN ────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- PROFILE TAB -->
+  <section id="profile" class="tab-content show" role="tabpanel">
+    <div class="card">
+      <div class="card__head">
+        <div>
+          <h2 class="card__title">Personal <em>Information</em></h2>
+          <p class="card__sub">Manage how we reach you and remember your name.</p>
+        </div>
+      </div>
+
+      <div id="alerts" class="alerts"></div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" placeholder="Enter your full name" autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="phone">Phone number</label>
+          <input type="tel" id="phone" disabled>
+          <small>Used to log in — can't be changed.</small>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label for="email">Email address</label>
+          <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+          <small>Needed to complete a booking — you can update it anytime.</small>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="saveBtn">
+          <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+          Save changes
+        </button>
+        <button class="btn btn-secondary" id="cancelBtn">Discard</button>
+        <button class="btn btn-outline-danger" id="logoutBtn" style="margin-left:auto">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          Log out
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CURRENT BOOKINGS -->
+  <section id="current" class="tab-content" role="tabpanel">
+    <div class="card">
+      <div class="card__head">
+        <div>
+          <h2 class="card__title">Current <em>Bookings</em></h2>
+          <p class="card__sub">Your upcoming and confirmed appointments.</p>
+        </div>
+      </div>
+      <div id="currentBookingsList">
+        <div class="skeleton-list"><div class="skeleton"></div><div class="skeleton"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOKING HISTORY -->
+  <section id="bookings" class="tab-content" role="tabpanel">
+    <div class="card">
+      <div class="card__head">
+        <div>
+          <h2 class="card__title">Booking <em>History</em></h2>
+          <p class="card__sub">Completed and cancelled bookings.</p>
+        </div>
+      </div>
+      <div id="bookingsList">
+        <div class="skeleton-list"><div class="skeleton"></div><div class="skeleton"></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ── DETAIL MODAL ────────────────────────────────── -->
+<div class="modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+  <div class="modal__box">
+    <div class="modal__head">
+      <h3 class="modal__title" id="detailTitle">Booking Details</h3>
+      <button class="modal__close" id="detailModalClose" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal__body" id="detailModalBody"></div>
+    <div class="modal__foot" id="detailModalFoot"></div>
+  </div>
+</div>
+
+<!-- ── CANCEL MODAL ────────────────────────────────── -->
+<div class="modal" id="cancelModalOverlay" role="dialog" aria-modal="true" aria-labelledby="cancelTitle">
+  <div class="modal__box" style="max-width:460px">
+    <div class="modal__head">
+      <h3 class="modal__title" id="cancelTitle">Cancel Booking</h3>
+      <button class="modal__close" id="cancelModalClose" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="field" style="margin-bottom:14px">
+        <label for="cancelReasonSelect">Why are you cancelling?</label>
+        <select id="cancelReasonSelect">
+          <option value="">Select a reason</option>
+          <option value="change_of_plans">Change of plans</option>
+          <option value="booked_wrong_slot">Booked wrong date/time</option>
+          <option value="found_better_price">Found a better price elsewhere</option>
+          <option value="professional_unavailable">Professional/slot unavailable</option>
+          <option value="other">Something else</option>
+        </select>
+      </div>
+      <div class="field" id="cancelNoteGroup" style="display:none">
+        <label for="cancelNoteInput">Please tell us more</label>
+        <textarea id="cancelNoteInput" rows="3" placeholder="What happened?"></textarea>
+      </div>
+      <div id="cancelModalError" class="alert error" style="display:none; margin-top:12px"></div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn-secondary" id="cancelDismissBtn">Never mind</button>
+      <button class="btn btn-danger" id="cancelConfirmBtn">Cancel Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ──────────────────────────────────────── -->
+<footer class="footer">
+  &copy; 2026 <em>VOGX</em> Salon. All rights reserved.
+</footer>
+
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+/* =================================================================
+   VOGX Profile — production script
+   ================================================================= */
+const API = new VogxAPI();
+let currentProfile = null;
+let cancelBookingId = null;
+const bookingCache = new Map(); // id -> group data (for detail modal)
+
+/* ── Cancel-reason labels ────────────────────────────
+   NOTE: 'other' has an empty label on purpose. When a booking is
+   cancelled with reason='other' we render the user's custom note
+   only — we never show the word "Other". */
+const CANCEL_REASON_LABELS = {
+  change_of_plans: 'Change of plans',
+  booked_wrong_slot: 'Booked wrong date/time',
+  found_better_price: 'Found a better price elsewhere',
+  professional_unavailable: 'Professional/slot unavailable',
+  other: '',
+};
+
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatAddress(g){
+  const parts = [g.house_number, g.street_area, g.landmark].filter(Boolean);
+  const line = parts.join(', ');
+  if (line && g.pincode) return `${line} - ${g.pincode}`;
+  return line || g.pincode || '';
+}
+function inr(n){ return `₹${parseFloat(n || 0).toFixed(2)}`; }
+function fmtDate(d){
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt)) return d;
+  return dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtDateTime(d){
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt)) return d;
+  return dt.toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+/* ── Alerts ─────────────────────────────────────── */
+function showAlert(message, type){
+  const el = document.getElementById('alerts');
+  el.innerHTML = `<div class="alert ${type}">${escapeHtml(message)}</div>`;
+  setTimeout(() => { if (el.firstChild) el.firstChild.remove(); }, 4000);
+}
+
+/* ── Tabs ───────────────────────────────────────── */
+function showTab(tabName){
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('show'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const t = document.getElementById(tabName); if (t) t.classList.add('show');
+  const b = document.querySelector(`[data-tab="${tabName}"]`); if (b) b.classList.add('active');
+  if (tabName === 'bookings') loadBookings();
+  if (tabName === 'current')  loadCurrentBookings();
+}
+
+/* ── Compact booking card ───────────────────────── */
+function renderBookingCard(g){
+  const status = (g.status || 'confirmed').toLowerCase();
+  const isHome = g.booking_type === 'home';
+  const svcCount = (g.bookings || []).length;
+  const canCancel = status === 'confirmed';
+
+  return `
+    <article class="bk-card">
+      <div class="bk-card__top">
+        <div>
+          <div class="bk-card__id">Order #${g.id}</div>
+          <div class="bk-card__sub">${svcCount} service${svcCount !== 1 ? 's' : ''} · ${isHome ? 'Home Visit' : 'In-Salon'}</div>
+        </div>
+        <span class="bk-status ${status}">${status}</span>
+      </div>
+
+      <div class="bk-meta">
+        <div class="bk-meta__item">
+          <div class="bk-meta__ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <div style="min-width:0"><div class="bk-meta__k">Date</div><div class="bk-meta__v">${fmtDate(g.booking_date)}</div></div>
+        </div>
+        <div class="bk-meta__item">
+          <div class="bk-meta__ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+          <div style="min-width:0"><div class="bk-meta__k">Time</div><div class="bk-meta__v">${escapeHtml(g.booking_time || '—')}</div></div>
+        </div>
+        <div class="bk-meta__item">
+          <div class="bk-meta__ic"><svg viewBox="0 0 24 24">${isHome
+              ? '<path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>'
+              : '<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/>'}</svg></div>
+          <div style="min-width:0"><div class="bk-meta__k">Type</div><div class="bk-meta__v">${isHome ? 'Home Visit' : 'In-Salon'}</div></div>
+        </div>
+      </div>
+
+      <div class="bk-total">
+        <div>
+          <div class="bk-total__lbl">Total (incl. GST)</div>
+          <div class="bk-total__amt">${inr(g.total_price)}</div>
+        </div>
+        <div class="bk-actions">
+          <button class="btn btn-ghost btn-sm" data-view="${g.id}">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            View details
+          </button>
+          ${canCancel ? `<button class="btn btn-outline-danger btn-sm" data-cancel="${g.id}">Cancel</button>` : ''}
+        </div>
+      </div>
+    </article>`;
+}
+
+/* ── Detail modal renderer ──────────────────────── */
+function openDetailModal(id){
+  const g = bookingCache.get(String(id));
+  if (!g) return;
+  const status = (g.status || 'confirmed').toLowerCase();
+  const isHome = g.booking_type === 'home';
+  const address = formatAddress(g);
+  const canCancel = status === 'confirmed';
+
+  /* Services list — items that came from a Package are grouped under that
+     package (with the package's own price shown once) instead of appearing
+     as separate ₹0.00 service rows. */
+  const allBookings = g.bookings || [];
+  const standaloneBookings = allBookings.filter(b => !b.package_id);
+
+  const packageGroups = [];
+  const seenPackages = new Set();
+  allBookings.forEach(b => {
+    if (b.package_id && !seenPackages.has(b.package_id)) {
+      seenPackages.add(b.package_id);
+      packageGroups.push({
+        id: b.package_id,
+        name: b.package_name,
+        price: b.package_price,
+        services: allBookings.filter(x => x.package_id === b.package_id),
+      });
+    }
+  });
+
+  const standaloneHtml = standaloneBookings.map(b => `
+    <div class="det-svc">
+      <div style="min-width:0">
+        <div class="det-svc__name">${escapeHtml(b.service_name || 'Service')}</div>
+        ${b.duration ? `<div class="det-svc__qty">${escapeHtml(b.duration)}</div>` : ''}
+      </div>
+      <div class="det-svc__price">${inr(b.price)}</div>
+    </div>`).join('');
+
+  const packageHtml = packageGroups.map(pkg => `
+    <div class="det-pkg">
+      <div class="det-pkg__head">
+        <div>
+          <span class="det-pkg__badge">Package</span>
+          <div class="det-pkg__name">${escapeHtml(pkg.name || 'Package')}</div>
+        </div>
+        <div class="det-pkg__price">${inr(pkg.price || 0)}</div>
+      </div>
+      <div class="det-pkg__svcs">
+        ${pkg.services.map(s => `<div class="det-pkg__svc">${escapeHtml(s.service_name || 'Service')}</div>`).join('')}
+      </div>
+    </div>`).join('');
+
+  const servicesHtml = standaloneHtml + packageHtml;
+
+  /* Bill — only Home charge (if home visit) + Total. GST inclusive. */
+  const homeCharge = isHome ? parseFloat(g.service_charge || 0) : 0;
+  const billRows = [];
+  if (isHome && homeCharge > 0) {
+    billRows.push(`<div class="bill__row"><span>Home visit charge</span><span>${inr(homeCharge)}</span></div>`);
+  }
+  billRows.push(`<div class="bill__row total"><span>Total</span><span>${inr(g.total_price)}</span></div>`);
+  const billHtml = `
+    <div class="bill">
+      ${billRows.join('')}
+      <div class="bill__note">All applicable taxes (GST) and service charges are included in the total shown above. No hidden convenience fee.</div>
+    </div>`;
+
+  /* Cancellation block — hide the word "Other" */
+  let cancelBlock = '';
+  if (status === 'cancelled') {
+    const rawReason = g.cancellation_reason || '';
+    const label = (rawReason in CANCEL_REASON_LABELS) ? CANCEL_REASON_LABELS[rawReason] : rawReason;
+    const note = g.cancellation_note || '';
+    const primary = label || note || 'Cancelled';
+    const showNoteLine = label && note && note !== label;
+    cancelBlock = `
+      <div class="det-section">
+        <div class="det-h">Cancellation</div>
+        <div class="det-cancel">
+          <div class="det-cancel__reason">${escapeHtml(primary)}</div>
+          ${showNoteLine ? `<div class="det-cancel__note">${escapeHtml(note)}</div>` : ''}
+          ${g.cancelled_at ? `<div class="det-cancel__when">Cancelled on ${escapeHtml(fmtDateTime(g.cancelled_at))}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('detailTitle').textContent = `Order #${g.id}`;
+  document.getElementById('detailModalBody').innerHTML = `
+    <div class="det-status-row">
+      <div>
+        <div class="det-order">${isHome ? 'Home Visit' : 'In-Salon'} appointment</div>
+        <div style="font-size:12.5px;color:var(--gray-2);margin-top:2px">${(g.bookings || []).length} service(s)</div>
+      </div>
+      <span class="bk-status ${status}">${status}</span>
+    </div>
+
+    <div class="det-section">
+      <div class="det-h">Appointment</div>
+      <div class="det-info">
+        <div class="det-info__cell"><div class="det-info__k">Date</div><div class="det-info__v">${escapeHtml(fmtDate(g.booking_date))}</div></div>
+        <div class="det-info__cell"><div class="det-info__k">Time</div><div class="det-info__v">${escapeHtml(g.booking_time || '—')}</div></div>
+        <div class="det-info__cell"><div class="det-info__k">Type</div><div class="det-info__v">${isHome ? 'Home Visit' : 'In-Salon'}</div></div>
+        ${isHome && address ? `<div class="det-info__cell" style="grid-column:1/-1"><div class="det-info__k">Service Address</div><div class="det-info__v">${escapeHtml(address)}</div></div>` : ''}
+      </div>
+    </div>
+
+    <div class="det-section">
+      <div class="det-h">Services</div>
+      ${servicesHtml || '<div class="det-info__cell"><div class="det-info__v">No service items.</div></div>'}
+    </div>
+
+    ${g.notes ? `
+      <div class="det-section">
+        <div class="det-h">Your note</div>
+        <div class="det-note">${escapeHtml(g.notes)}</div>
+      </div>` : ''}
+
+    ${cancelBlock}
+
+    <div class="det-section">
+      <div class="det-h">Bill Summary</div>
+      ${billHtml}
+    </div>
+  `;
+
+  document.getElementById('detailModalFoot').innerHTML = `
+    <button class="btn btn-secondary" id="detailCloseBtn">Close</button>
+    ${canCancel ? `<button class="btn btn-outline-danger" data-cancel="${g.id}">Cancel Booking</button>` : ''}
+  `;
+  document.getElementById('detailModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeDetailModal(){
+  document.getElementById('detailModal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+/* ── Load profile ───────────────────────────────── */
+async function loadProfile(){
+  try {
+    const p = await API.getProfile();
+    currentProfile = p;
+    document.getElementById('phone').value = p.phone || '';
+    document.getElementById('name').value  = p.name  || '';
+    document.getElementById('email').value = p.email || '';
+    const chip = document.getElementById('phoneDisplay');
+    chip.innerHTML = `<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.28-1.27a2 2 0 0 1 2.11-.45c.9.34 1.84.57 2.8.7A2 2 0 0 1 22 16.92z"/></svg> ${escapeHtml(p.phone || '')}`;
+  } catch (e) {
+    console.error('loadProfile failed', e);
+    if (e.message && e.message.includes('401')) window.location.href = '/login';
+  }
+}
+
+/* ── Load bookings (history) ────────────────────── */
+async function loadBookings(){
+  const list = document.getElementById('bookingsList');
+  list.innerHTML = `<div class="skeleton-list"><div class="skeleton"></div><div class="skeleton"></div></div>`;
+  try {
+    const res  = await fetch('/api/bookings/booking-groups/?page=1', { headers:{ 'Authorization': `Token ${API.token}` }});
+    const data = await res.json();
+    const groups = (data.results || data).filter(g => ['cancelled','completed'].includes((g.status || '').toLowerCase()));
+    if (!groups.length) {
+      list.innerHTML = `
+        <div class="empty">
+          <div class="empty__icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <h3>No past bookings</h3>
+          <p>Completed and cancelled appointments will appear here.</p>
+        </div>`;
+      return;
+    }
+    groups.forEach(g => bookingCache.set(String(g.id), g));
+    list.innerHTML = `<div class="bk-list">${groups.map(renderBookingCard).join('')}</div>`;
+  } catch (e) {
+    console.error(e);
+    list.innerHTML = `<div class="empty"><h3>Couldn't load bookings</h3><p>Please try again.</p></div>`;
+  }
+}
+
+/* ── Load current bookings ──────────────────────── */
+async function loadCurrentBookings(){
+  const list = document.getElementById('currentBookingsList');
+  list.innerHTML = `<div class="skeleton-list"><div class="skeleton"></div><div class="skeleton"></div></div>`;
+  try {
+    const res  = await fetch('/api/bookings/booking-groups/?page=1&status=confirmed', { headers:{ 'Authorization': `Token ${API.token}` }});
+    const data = await res.json();
+    const groups = data.results || data;
+    if (!groups || !groups.length) {
+      list.innerHTML = `
+        <div class="empty">
+          <div class="empty__icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+          <h3>No current bookings</h3>
+          <p>Your upcoming appointments will appear here.</p>
+        </div>`;
+      return;
+    }
+    groups.forEach(g => bookingCache.set(String(g.id), g));
+    list.innerHTML = `<div class="bk-list">${groups.map(renderBookingCard).join('')}</div>`;
+  } catch (e) {
+    console.error(e);
+    list.innerHTML = `<div class="empty"><h3>Couldn't load bookings</h3><p>Please try again.</p></div>`;
+  }
+}
+
+/* ── Cancel modal ───────────────────────────────── */
+function openCancelModal(id){
+  cancelBookingId = id;
+  document.getElementById('cancelReasonSelect').value = '';
+  document.getElementById('cancelNoteInput').value = '';
+  document.getElementById('cancelNoteGroup').style.display = 'none';
+  document.getElementById('cancelModalError').style.display = 'none';
+  document.getElementById('cancelModalOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeCancelModal(){
+  document.getElementById('cancelModalOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+  cancelBookingId = null;
+}
+
+document.getElementById('cancelReasonSelect').addEventListener('change', e => {
+  document.getElementById('cancelNoteGroup').style.display = e.target.value === 'other' ? 'block' : 'none';
+});
+document.getElementById('cancelModalClose').addEventListener('click', closeCancelModal);
+document.getElementById('cancelDismissBtn').addEventListener('click', closeCancelModal);
+document.getElementById('cancelConfirmBtn').addEventListener('click', async () => {
+  const reason = document.getElementById('cancelReasonSelect').value;
+  const note   = document.getElementById('cancelNoteInput').value.trim();
+  const errBox = document.getElementById('cancelModalError');
+  errBox.style.display = 'none';
+  if (!reason) { errBox.textContent = 'Please select a reason'; errBox.style.display = 'block'; return; }
+  if (reason === 'other' && !note) { errBox.textContent = 'Please tell us a bit more about why you are cancelling'; errBox.style.display = 'block'; return; }
+
+  const btn = document.getElementById('cancelConfirmBtn');
+  btn.disabled = true; btn.textContent = 'Cancelling…';
+  try {
+    const res = await fetch(`/api/bookings/booking-groups/${cancelBookingId}/cancel/`, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Token ${API.token}`,
+        'X-CSRFToken':document.querySelector('[name=csrftoken]').getAttribute('content')
+      },
+      body: JSON.stringify({ reason, note })
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || Object.values(errData)[0] || 'Failed to cancel booking');
+    }
+    closeCancelModal();
+    closeDetailModal();
+    loadBookings();
+    loadCurrentBookings();
+  } catch (e) {
+    errBox.textContent = e.message; errBox.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Cancel Booking';
+  }
+});
+
+/* ── Detail modal wiring ────────────────────────── */
+document.getElementById('detailModalClose').addEventListener('click', closeDetailModal);
+document.addEventListener('click', e => {
+  const view = e.target.closest('[data-view]');
+  if (view) { openDetailModal(view.getAttribute('data-view')); return; }
+  const cxl = e.target.closest('[data-cancel]');
+  if (cxl) { openCancelModal(cxl.getAttribute('data-cancel')); return; }
+  if (e.target.id === 'detailCloseBtn') { closeDetailModal(); return; }
+});
+[document.getElementById('detailModal'), document.getElementById('cancelModalOverlay')].forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) { m.classList.remove('active'); document.body.style.overflow = ''; }});
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeDetailModal(); closeCancelModal(); }
+});
+
+/* ── Profile actions ────────────────────────────── */
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const name  = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  if (!name) { showAlert('Please enter your name', 'error'); return; }
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  try {
+    await fetch('/api/auth/profile/', {
+      method:'PUT',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Token ${API.token}`,
+        'X-CSRFToken':document.querySelector('[name=csrftoken]').getAttribute('content')
+      },
+      body: JSON.stringify({ name, email })
+    });
+    showAlert('Profile updated successfully!', 'success');
+    loadProfile();
+  } catch (e) {
+    console.error(e); showAlert('Failed to update profile', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+document.getElementById('cancelBtn').addEventListener('click', loadProfile);
+
+async function doLogout(){
+  try { await API.logout(); } catch (e) { console.error(e); }
+  API.clearToken(); window.location.href = '/login';
+}
+document.getElementById('logoutBtn').addEventListener('click', doLogout);
+document.getElementById('dropdownLogoutBtn').addEventListener('click', doLogout);
+
+/* ── Profile dropdown ───────────────────────────── */
+document.getElementById('profileBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('profileDropdown').classList.toggle('open');
+});
+document.addEventListener('click', () => {
+  document.getElementById('profileDropdown').classList.remove('open');
+});
+
+/* ── Tabs ───────────────────────────────────────── */
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => showTab(b.getAttribute('data-tab')));
+});
+
+/* ── Init ───────────────────────────────────────── */
+window.addEventListener('load', () => {
+  if (!API.token) { window.location.href = '/login'; return; }
+  loadProfile();
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab');
+  if (tab) showTab(tab); else loadCurrentBookings(); // preload for the most useful tab
+});
+</script>
+</body>
+</html>
