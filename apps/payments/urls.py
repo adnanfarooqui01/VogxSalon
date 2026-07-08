@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     PaymentViewSet, create_payment_order, verify_payment_order, payment_history,
     create_precheck_order, verify_combined_payment, confirm_pay_later,
+    razorpay_webhook,
 )
 
 
@@ -19,6 +20,7 @@ urlpatterns = [
     path('verify-combined-payment/', verify_combined_payment, name='verify-combined-payment'),
     path('confirm-pay-later/', confirm_pay_later, name='confirm-pay-later'),
     path('history/', payment_history, name='payment-history'),
+    path('webhook/razorpay/', razorpay_webhook, name='razorpay-webhook'),
     path('', include(router.urls)),
 ]
 

@@ -139,9 +139,12 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'otp_send_ip': '3/day',
+        'otp_send_ip': '5/day',
         'otp_verify': '10/min',
         'profile_update': '15/min',
+        'booking_create': '10/min',
+        'payment': '5/min',
+        'anon': '300/min',
     },
 }
 
@@ -192,4 +195,9 @@ JAZZMIN_SETTINGS = {
     'site_header': 'Salon Booking Management',
     'site_brand': 'VogxSalon',
     'welcome_sign': 'Welcome to Salon Admin',
+}
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
 }

@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 # against the same daily total (the frontend's resendOTP() calls the same
 # quota check). So 3/day means 3 total attempts per phone per day, not
 # 3 fresh sends plus unlimited resends.
-MAX_OTP_PER_PHONE_PER_DAY = 100
+MAX_OTP_PER_PHONE_PER_DAY = 5
 RESEND_COOLDOWN_SECONDS = 30
 
 PHONE_REGEX = re.compile(r'^[6-9]\d{9}$')  # 10-digit Indian mobile, adjust if needed

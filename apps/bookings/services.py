@@ -3,6 +3,7 @@ from django.db import transaction
 from apps.core.models import ServiceablePincode
 from apps.services.models import Service, Package
 from .models import Booking, BookingGroup
+from .notifications import send_admin_booking_email
 
 
 def compute_booking_totals(service_ids, package_ids, booking_type, pincode):
@@ -86,5 +87,15 @@ def create_booking_group(user, data, status='confirmed'):
                 notes=data.get('notes', ''),
                 status=status,
             )
+
+    if status == 'confirmed':
+        # This single call point covers EVERY way a BookingGroup can be
+        # confirmed in this project:
+        #   - BookingGroupCreateSerializer.create() (cash / pay-later checkout)
+        #   - payments/views.py _finalize_group_payment() (online payment,
+        #     both the browser callback AND the webhook safety-net)
+        # send_admin_booking_email() never raises — a failed email can't
+        # roll back this transaction or block the booking itself.
+        send_admin_booking_email(group)
 
     return group
