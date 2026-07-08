@@ -10,8 +10,10 @@ from decouple import config
 import uuid
 
 from apps.bookings.models import Booking, BookingGroup
+from apps.bookings.serializers import BookingGroupSerializer
+from apps.bookings.services import compute_booking_totals, create_booking_group
 from .models import Payment
-from .serializers import PaymentSerializer, CreateOrderSerializer, VerifyPaymentSerializer
+from .serializers import PaymentSerializer, CreateOrderSerializer, VerifyPaymentSerializer, PrecheckOrderSerializer
 from .razorpay_utils import create_razorpay_order, verify_razorpay_signature, fetch_payment_details
 
 
@@ -207,37 +209,54 @@ def verify_payment_order(request):
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
-def create_combined_order(request):
-    group_id = request.data.get('group_id')
-    try:
-        group = BookingGroup.objects.get(id=group_id, user=request.user, status='confirmed', is_paid=False)
-    except BookingGroup.DoesNotExist:
-        return Response({'detail': 'Invalid or already-paid booking group'}, status=status.HTTP_400_BAD_REQUEST)
+def create_precheck_order(request):
+    serializer = PrecheckOrderSerializer(data=request.data, context={'request': request})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    payment, _ = Payment.objects.get_or_create(
-        booking_group=group,
-        defaults={'amount': group.total_price, 'status': 'pending', 'payment_method': 'razorpay',
-                  'transaction_id': f"TXN-{uuid.uuid4().hex[:20].upper()}"}
+    data = serializer.validated_data
+    try:
+        _, _, _, _, _, total_price = compute_booking_totals(
+            data.get('service_ids', []) or [],
+            data.get('package_ids', []) or [],
+            data['booking_type'],
+            data.get('pincode'),
+        )
+    except ValueError as exc:
+        return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    payload = dict(data)
+    payload['booking_date'] = str(payload['booking_date'])
+    payload['booking_time'] = str(payload['booking_time'])
+
+    payment = Payment.objects.create(
+        booking_group=None,
+        amount=total_price,
+        status='pending',
+        payment_method='razorpay',
+        transaction_id=f"TXN-{uuid.uuid4().hex[:20].upper()}",
+        pending_payload=payload,
     )
 
     razorpay_order = create_razorpay_order(
-        amount=float(group.total_price),
+        amount=float(total_price),
         receipt=payment.transaction_id,
-        notes={'group_id': group.id, 'customer': request.user.name}
+        notes={'user_id': request.user.id}
     )
     if not razorpay_order:
+        payment.delete()
         return Response({'detail': 'Failed to create Razorpay order'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     payment.razorpay_order_id = razorpay_order['id']
     payment.status = 'initiated'
-    payment.save()
+    payment.save(update_fields=['razorpay_order_id', 'status', 'updated_at'])
 
     return Response({
         'order_id': razorpay_order['id'],
         'amount': razorpay_order['amount'] / 100,
         'currency': razorpay_order['currency'],
         'key': config('RAZORPAY_KEY_ID'),
-        'group_id': group.id,
+        'transaction_id': payment.transaction_id,
     }, status=status.HTTP_201_CREATED)
 
 
@@ -255,22 +274,48 @@ def verify_combined_payment(request):
         return Response({'detail': 'Invalid payment signature'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        payment = Payment.objects.get(razorpay_order_id=razorpay_order_id, booking_group__user=request.user)
+        payment = Payment.objects.get(razorpay_order_id=razorpay_order_id)
     except Payment.DoesNotExist:
         return Response({'detail': 'Payment record not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    if payment.booking_group_id:
+        return Response({'status': 'completed', 'group_id': payment.booking_group_id, 'group': BookingGroupSerializer(payment.booking_group).data})
+
+    payload = payment.pending_payload
+    if not payload:
+        return Response({'detail': 'Booking details missing for this payment'}, status=status.HTTP_400_BAD_REQUEST)
+
+    from datetime import datetime as dt
+    payload = dict(payload)
+    payload['booking_date'] = dt.strptime(payload['booking_date'], '%Y-%m-%d').date()
+    payload['booking_time'] = dt.strptime(payload['booking_time'], '%H:%M:%S').time()
+
+    name = (payload.pop('name', '') or '').strip()
+    email = (payload.pop('email', '') or '').strip()
+    user = request.user
+    update_fields = []
+    if name and name != user.name:
+        user.name = name
+        update_fields.append('name')
+    if email and email != user.email:
+        user.email = email
+        update_fields.append('email')
+    if update_fields:
+        user.save(update_fields=update_fields)
+
     with transaction.atomic():
+        group = create_booking_group(user, payload, status='confirmed')
+        payment.booking_group = group
         payment.razorpay_payment_id = razorpay_payment_id
         payment.razorpay_signature = razorpay_signature
         payment.status = 'completed'
         payment.paid_at = timezone.now()
+        payment.pending_payload = None
         payment.save()
-
-        group = payment.booking_group
         group.is_paid = True
         group.save(update_fields=['is_paid', 'updated_at'])
 
-    return Response({'status': 'completed', 'group_id': payment.booking_group.id})
+    return Response({'status': 'completed', 'group_id': group.id, 'group': BookingGroupSerializer(group).data})
 
 
 @api_view(['POST'])

@@ -3,6 +3,7 @@ from apps.core.models import ServiceablePincode
 from apps.services.models import Service, Package
 from django.db import transaction 
 from .models import TimeSlot, Booking, BookingGroup
+from .services import create_booking_group
 
 class TimeSlotSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source='service.name', read_only=True)
@@ -189,88 +190,10 @@ class BookingGroupCreateSerializer(serializers.Serializer):
         if update_fields:
             user.save(update_fields=update_fields)
 
-        service_ids = validated_data.pop('service_ids', []) or []
-        package_ids = validated_data.pop('package_ids', []) or []
-
-        services = list(Service.objects.filter(id__in=service_ids))
-        if len(services) != len(service_ids):
-            raise serializers.ValidationError({'service_ids': 'One or more services not found.'})
-
-        packages = list(Package.objects.prefetch_related('services').filter(id__in=package_ids))
-        if len(packages) != len(package_ids):
-            raise serializers.ValidationError({'package_ids': 'One or more packages not found.'})
-
-        subtotal = sum(s.price for s in services) + sum(p.package_price for p in packages)
-        service_charge = 0
-        if validated_data['booking_type'] == 'home':
-            serviceable = ServiceablePincode.objects.filter(pincode=validated_data.get('pincode'), is_active=True).first()
-            service_charge = serviceable.delivery_charge if serviceable else 0
-        convenience_fee = 20
-        total_price = subtotal + service_charge + convenience_fee
-
-        with transaction.atomic():
-            group = BookingGroup.objects.create(
-                user=request.user,
-                booking_date=validated_data['booking_date'],
-                booking_time=validated_data['booking_time'],
-                booking_type=validated_data['booking_type'],
-                pincode=validated_data.get('pincode'),
-                house_number=validated_data.get('house_number'),
-                street_area=validated_data.get('street_area'),
-                landmark=validated_data.get('landmark'),
-                notes=validated_data.get('notes', ''),
-                subtotal=subtotal,
-                service_charge=service_charge,
-                convenience_fee=convenience_fee,
-                total_price=total_price,
-                status='confirmed',
-            )
-
-            for service in services:
-                Booking.objects.create(
-                    group=group,
-                    user=request.user,
-                    service=service,
-                    booking_date=validated_data['booking_date'],
-                    booking_time=validated_data['booking_time'],
-                    duration_minutes=service.duration_minutes,
-                    total_price=service.price,
-                    booking_type=validated_data['booking_type'],
-                    pincode=validated_data.get('pincode'),
-                    house_number=validated_data.get('house_number'),
-                    street_area=validated_data.get('street_area'),
-                    landmark=validated_data.get('landmark'),
-                    notes=validated_data.get('notes', ''),
-                    status='confirmed',
-                )
-
-            # Packages — create one Booking row per included service so
-            # Admin / My Bookings show exactly what's inside the package.
-            # Each row is priced at 0 (not billed individually) since the
-            # package's own `package_price` is already folded into
-            # `subtotal`/`total_price` above; `package_price` is still
-            # exposed via BookingSerializer/BookingGroupSerializer for display.
-            for package in packages:
-                for service in package.services.all():
-                    Booking.objects.create(
-                        group=group,
-                        user=request.user,
-                        service=service,
-                        package=package,
-                        booking_date=validated_data['booking_date'],
-                        booking_time=validated_data['booking_time'],
-                        duration_minutes=service.duration_minutes,
-                        total_price=0,
-                        booking_type=validated_data['booking_type'],
-                        pincode=validated_data.get('pincode'),
-                        house_number=validated_data.get('house_number'),
-                        street_area=validated_data.get('street_area'),
-                        landmark=validated_data.get('landmark'),
-                        notes=validated_data.get('notes', ''),
-                        status='confirmed',
-                    )
-
-        return group
+        try:
+            return create_booking_group(user, validated_data, status='confirmed')
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc))
 
 
 class BookingGroupSerializer(serializers.ModelSerializer):

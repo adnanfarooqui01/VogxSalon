@@ -33,11 +33,12 @@
      pages do), this modal calls it after every Add/±, so the navbar
      badge stays in sync automatically. Cart data is read/written to
      the same `vogx_cart` localStorage key & item shape your other
-     pages already use: { id, type: 'service'|'package', name, price, qty }.
+     pages already use: { id, type: 'service'|'package', name, price,
+     image, qty }.
 
      If the host page defines `openLogin()`, it's used to prompt login
      when an anonymous user hits "Add". Otherwise a toast is shown.
-     
+
    ════════════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -108,17 +109,13 @@
     transition: background .2s ease; font-family: inherit;
   }
   .sdm-add-btn:hover { background: var(--brand-tint, #fce4ec); }
-  .sdm-qty-box {
-    display: flex; align-items: center; border: 1.5px solid var(--brand, #c2185b);
-    border-radius: 22px; overflow: hidden;
+  .sdm-added-btn {
+    padding: 10px 26px; border-radius: 22px; border: 1.5px solid var(--brand, #c2185b);
+    background: var(--brand, #c2185b); color: var(--white, #fff);
+    font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap;
+    transition: background .2s ease, color .2s ease; font-family: inherit;
   }
-  .sdm-qty-box button {
-    width: 34px; height: 36px; display: flex; align-items: center; justify-content: center;
-    color: var(--brand, #c2185b); font-size: 17px; font-weight: 700; background: var(--white, #fff);
-    border: none; cursor: pointer; transition: background .2s ease; font-family: inherit;
-  }
-  .sdm-qty-box button:hover { background: var(--brand-tint, #fce4ec); }
-  .sdm-qty-num { min-width: 24px; text-align: center; font-size: 14px; font-weight: 700; }
+  .sdm-added-btn:hover { background: var(--white, #fff); color: var(--brand, #c2185b); }
 
   .sdm-desc { font-size: 14px; color: var(--gray-2, #666); line-height: 1.65; margin-bottom: 24px; }
 
@@ -230,27 +227,24 @@
   /* cart — same schema/localStorage key as the rest of the VOGX site */
   function sdmGetCart() { try { return JSON.parse(localStorage.getItem('vogx_cart') || '[]'); } catch { return []; } }
   function sdmSaveCart(items) { localStorage.setItem('vogx_cart', JSON.stringify(items)); sdmUpdateBadge(); }
-  function sdmCartQty(id, type) {
-    const item = sdmGetCart().find(c => String(c.id) === String(id) && c.type === type);
-    return item ? item.qty : 0;
+  function sdmCartHas(id, type) {
+    return sdmGetCart().some(c => String(c.id) === String(id) && c.type === type);
   }
-  function sdmCartIncrement(item) {
-    if (!sdmIsLoggedIn()) { sdmOpenLogin(); return; }
+  function sdmCartAdd(item) {
     const cart = sdmGetCart();
     const existing = cart.find(c => String(c.id) === String(item.id) && c.type === item.type);
-    if (existing) existing.qty += 1;
-    else cart.push({ ...item, qty: 1 });
+    if (existing) return; // already in cart, one-per-service only
+    cart.push({ ...item, qty: 1 });
     sdmSaveCart(cart);
     sdmToast(`${item.name} added to cart`, 'success');
     if (typeof window.refreshAllSteppers === 'function') window.refreshAllSteppers();
     renderActionArea();
   }
-  function sdmCartDecrement(id, type) {
+  function sdmCartRemove(id, type) {
     const cart = sdmGetCart();
     const idx = cart.findIndex(c => String(c.id) === String(id) && c.type === type);
     if (idx === -1) return;
-    cart[idx].qty -= 1;
-    if (cart[idx].qty <= 0) cart.splice(idx, 1);
+    cart.splice(idx, 1);
     sdmSaveCart(cart);
     if (typeof window.refreshAllSteppers === 'function') window.refreshAllSteppers();
     renderActionArea();
@@ -269,20 +263,14 @@
   }
 
   /* ── STATE for currently-open item (used by action area re-renders) ── */
-  let _current = null; // { id, type, name, price }
+  let _current = null; // { id, type, name, price, image }
 
   function actionAreaHTML() {
     if (!_current) return '';
-    const qty = sdmCartQty(_current.id, _current.type);
-    if (qty <= 0) {
-      return `<button class="sdm-add-btn" id="sdmAddBtn">Add</button>`;
+    if (sdmCartHas(_current.id, _current.type)) {
+      return `<button class="sdm-added-btn" id="sdmRemoveBtn">Added ✓</button>`;
     }
-    return `
-      <div class="sdm-qty-box">
-        <button id="sdmDecBtn" aria-label="Decrease">−</button>
-        <span class="sdm-qty-num">${qty}</span>
-        <button id="sdmIncBtn" aria-label="Increase">+</button>
-      </div>`;
+    return `<button class="sdm-add-btn" id="sdmAddBtn">Add</button>`;
   }
 
   function renderActionArea() {
@@ -294,11 +282,9 @@
 
   function wireActionArea() {
     const addBtn = document.getElementById('sdmAddBtn');
-    if (addBtn) addBtn.addEventListener('click', () => sdmCartIncrement(_current));
-    const incBtn = document.getElementById('sdmIncBtn');
-    if (incBtn) incBtn.addEventListener('click', () => sdmCartIncrement(_current));
-    const decBtn = document.getElementById('sdmDecBtn');
-    if (decBtn) decBtn.addEventListener('click', () => sdmCartDecrement(_current.id, _current.type));
+    if (addBtn) addBtn.addEventListener('click', () => sdmCartAdd(_current));
+    const removeBtn = document.getElementById('sdmRemoveBtn');
+    if (removeBtn) removeBtn.addEventListener('click', () => sdmCartRemove(_current.id, _current.type));
   }
 
   /* ── OPEN / CLOSE ────────────────────────────────────────────── */
@@ -322,14 +308,15 @@
 
   /* ── RENDER: SERVICE ─────────────────────────────────────────── */
   function renderService(svc) {
-    _current = { id: svc.id, type: 'service', name: svc.name, price: Number(svc.price) };
+    const heroImg = svc.detail_image || svc.preview_image || '';
+    const cartImg = svc.preview_image || '';
+    _current = { id: svc.id, type: 'service', name: svc.name, price: Number(svc.price), image: cartImg };
 
-    const img = svc.detail_image || svc.preview_image;
     const steps = svc.steps || [];
 
     bodyEl.innerHTML = `
       <div class="sdm-hero">
-        ${img ? `<img src="${img}" alt="${esc(svc.name)}">` : ICON_SERVICE}
+        ${heroImg ? `<img src="${heroImg}" alt="${esc(svc.name)}">` : ICON_SERVICE}
       </div>
       <div class="sdm-content">
         <div class="sdm-badge">${ICON_SERVICE} ${esc(svc.category_name || 'Service')}</div>
@@ -363,7 +350,8 @@
 
   /* ── RENDER: PACKAGE ─────────────────────────────────────────── */
   function renderPackage(pkg) {
-    _current = { id: pkg.id, type: 'package', name: pkg.name, price: Number(pkg.package_price) };
+    const img = pkg.image || '';
+    _current = { id: pkg.id, type: 'package', name: pkg.name, price: Number(pkg.package_price), image: img };
 
     const services = pkg.services || [];
     const original = services.reduce((sum, s) => sum + Number(s.price), 0);
@@ -372,7 +360,7 @@
 
     bodyEl.innerHTML = `
       <div class="sdm-hero">
-        ${pkg.image ? `<img src="${pkg.image}" alt="${esc(pkg.name)}">` : ICON_PACKAGE}
+        ${img ? `<img src="${img}" alt="${esc(pkg.name)}">` : ICON_PACKAGE}
       </div>
       <div class="sdm-content">
         <div class="sdm-badge">${ICON_PACKAGE} Package</div>

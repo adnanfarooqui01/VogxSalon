@@ -29,6 +29,7 @@ class Payment(models.Model):
     razorpay_order_id = models.CharField(max_length=100, blank=True)
     razorpay_signature = models.CharField(max_length=255, blank=True)
     transaction_id = models.CharField(max_length=100, unique=True)
+    pending_payload = models.JSONField(null=True, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -40,4 +41,6 @@ class Payment(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Payment #{self.id} - {self.booking_group.user.name} (${self.amount})"
+        if self.booking_group and getattr(self.booking_group, 'user', None):
+            return f"Payment #{self.id} - {self.booking_group.user.name} (${self.amount})"
+        return f"Payment #{self.id} - ${self.amount}"

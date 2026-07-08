@@ -42,7 +42,7 @@
     body {
       font-family: var(--sans);
       color: var(--ink);
-      background: var(--cream);
+      background: var(--white);
       padding-top: var(--nav-h);
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
@@ -69,7 +69,7 @@
     .nav {
       position: fixed; top: 0; left: 0; right: 0;
       height: var(--nav-h);
-      background: rgba(250,246,242,.78);
+      background: var(--white);
       backdrop-filter: saturate(160%) blur(14px);
       -webkit-backdrop-filter: saturate(160%) blur(14px);
       border-bottom: 1px solid rgba(20,16,15,.06);
@@ -693,7 +693,7 @@
     </a>
 
     <div class="nav__right">
-      <a href="cart" class="nav__cart" aria-label="Cart">
+      <a href="cart" class="nav__cart" aria-label="Cart" onclick="return handleCartClick(event)">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/>
         </svg>
@@ -964,6 +964,14 @@ function getToken()   { return localStorage.getItem('auth_token'); }
 function setToken(t)  { localStorage.setItem('auth_token', t); }
 function clearToken() { localStorage.removeItem('auth_token'); }
 function isLoggedIn() { return !!getToken(); }
+function handleCartClick(e) {
+  if (!isLoggedIn()) {
+    e.preventDefault();
+    openLogin();
+    return false;
+  }
+  return true;
+}
 
 function authHeaders() {
   const h = { 'Content-Type': 'application/json' };
@@ -1111,7 +1119,6 @@ async function loadPackages() {
     row.querySelectorAll('.pkg-card__add').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
-        if (!isLoggedIn()) { openLogin(); return; }
         addToCart({
           id: btn.dataset.id, type: 'package',
           name: btn.dataset.name, price: Number(btn.dataset.price),

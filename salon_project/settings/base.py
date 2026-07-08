@@ -138,6 +138,11 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    'DEFAULT_THROTTLE_RATES': {
+        'otp_send_ip': '3/day',
+        'otp_verify': '10/min',
+        'profile_update': '15/min',
+    },
 }
 
 # CORS

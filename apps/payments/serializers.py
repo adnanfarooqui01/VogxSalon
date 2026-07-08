@@ -6,6 +6,7 @@ from rest_framework import serializers
 from django.utils import timezone
 
 from apps.bookings.models import Booking
+from apps.bookings.serializers import BookingGroupCreateSerializer
 from .models import Payment
 
 
@@ -28,6 +29,11 @@ class VerifyPaymentSerializer(serializers.Serializer):
     razorpay_order_id = serializers.CharField(max_length=100)
     razorpay_payment_id = serializers.CharField(max_length=100)
     razorpay_signature = serializers.CharField(max_length=255)
+
+
+class PrecheckOrderSerializer(BookingGroupCreateSerializer):
+    def create(self, validated_data):
+        raise NotImplementedError
 
 
 class PaymentSerializer(serializers.ModelSerializer):
