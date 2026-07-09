@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
 :root{
@@ -192,6 +191,14 @@ input,textarea,select{font-family:inherit}
 .modal.open{display:flex}
 .modal__box{background:var(--white);width:100%;max-width:420px;padding:28px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .modal__box.wide{max-width:560px}
+.modal__box.policy{max-height:80vh;overflow-y:auto}
+.policy-body{font-size:14px;color:var(--gray-1);line-height:1.7}
+.policy-body h3{color:var(--ink);font-size:14.5px;margin:16px 0 6px}
+.policy-body h3:first-child{margin-top:0}
+.policy-body p{margin:0 0 10px}
+.policy-body ul{margin:0 0 10px;padding-left:18px}
+.policy-body li{margin-bottom:5px}
+.policy-body .policy-updated{color:var(--gray-3);font-size:12px;margin-top:16px;padding-top:12px;border-top:1px solid var(--gray-5)}
 .modal__close{position:absolute;top:12px;right:12px;width:30px;height:30px;color:var(--gray-2);font-size:22px;display:flex;align-items:center;justify-content:center;transition:color var(--transition)}
 .modal__close:hover{color:var(--ink)}
 .modal__title{font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:-.01em;margin-bottom:6px;color:var(--ink)}
@@ -267,28 +274,93 @@ input,textarea,select{font-family:inherit}
 </div>
 
 <div class="modal" id="cancelPolicyModal">
-  <div class="modal__box wide">
+  <div class="modal__box wide policy">
     <button class="modal__close" onclick="closePolicy('cancelPolicyModal')">×</button>
     <h2 class="modal__title">Cancellation Policy</h2>
-    <p class="modal__sub">Full policy content will be added here shortly.</p>
-    <div style="font-size:14px;color:var(--gray-1);line-height:1.65">
-      <p style="margin-bottom:10px">You may cancel a booking anytime before the scheduled service time. Refunds (if applicable) are processed within 5–7 business days to the original payment method.</p>
-      <p>For same-day cancellations less than 2 hours before your slot, a small handling charge may apply.</p>
+    <div class="policy-body">
+      <h3>Cancellation by Customer</h3>
+      <ul>
+        <li>Bookings may be cancelled before the scheduled appointment time.</li>
+        <li>There is no cancellation charge — we simply ask that you cancel as soon as possible so the slot can be offered to another customer.</li>
+      </ul>
+
+      <h3>Rescheduling</h3>
+      <p>You may request to reschedule your appointment, subject to slot availability.</p>
+
+      <h3>Late Arrival</h3>
+      <p>Arriving significantly late may result in reduced service time or cancellation of the appointment.</p>
+
+      <h3>No-Show</h3>
+      <p>Repeated no-shows may lead to restrictions on future bookings.</p>
+
+      <h3>Cancellation by VOGX Salon</h3>
+      <p>In rare circumstances, VOGX Salon may cancel or reschedule an appointment due to staff availability, emergencies, or other operational reasons.</p>
+
+      <h3>Contact</h3>
+      <p>For cancellations or rescheduling, please contact us using the details provided on our website.</p>
+
+      <div class="policy-updated">Last updated: July 2026</div>
     </div>
   </div>
 </div>
 <div class="modal" id="privacyModal">
-  <div class="modal__box wide">
+  <div class="modal__box wide policy">
     <button class="modal__close" onclick="closePolicy('privacyModal')">×</button>
     <h2 class="modal__title">Privacy Policy</h2>
-    <p class="modal__sub">Full policy content will be added here shortly.</p>
+    <div class="policy-body">
+      <h3>Information We Collect</h3>
+      <p>We collect information you provide directly to us, such as your name, email address, phone number, and payment details when you make a booking or create an account.</p>
+
+      <h3>Local Storage &amp; Session Data</h3>
+      <p>We may store booking details, cart information, contact information, and authentication data in your browser to improve your experience and maintain your session.</p>
+
+      <h3>How We Use Your Information</h3>
+      <ul>
+        <li>To process and manage your bookings</li>
+        <li>To communicate with you about your orders or inquiries</li>
+        <li>To improve our website and services</li>
+        <li>To keep you signed in and remember your preferences</li>
+      </ul>
+
+      <h3>Data Sharing</h3>
+      <p>We do not sell your personal information. We may share data with trusted third-party service providers who help us operate our business, such as payment processors, and only as needed to deliver our services.</p>
+
+      <h3>Your Choices</h3>
+      <p>You can clear your browser's stored data at any time. Doing so may require you to sign in again or re-enter cart and booking information.</p>
+
+      <h3>Contact Us</h3>
+      <p>If you have questions about this Privacy Policy, please contact us using the details provided on our website.</p>
+
+      <div class="policy-updated">Last updated: July 2026</div>
+    </div>
   </div>
 </div>
 <div class="modal" id="termsModal">
-  <div class="modal__box wide">
+  <div class="modal__box wide policy">
     <button class="modal__close" onclick="closePolicy('termsModal')">×</button>
     <h2 class="modal__title">Terms &amp; Conditions</h2>
-    <p class="modal__sub">Full policy content will be added here shortly.</p>
+    <div class="policy-body">
+      <h3>Acceptance of Terms</h3>
+      <p>By accessing or using our website and services, you agree to be bound by these Terms &amp; Conditions. If you do not agree, please do not use our services.</p>
+
+      <h3>Bookings &amp; Payments</h3>
+      <p>All bookings are subject to availability and confirmation. Prices are listed in the applicable currency and may change without prior notice until a booking is confirmed and paid for.</p>
+
+      <h3>User Responsibilities</h3>
+      <ul>
+        <li>Provide accurate and complete information when booking</li>
+        <li>Use our services only for lawful purposes</li>
+        <li>Keep your account credentials secure</li>
+      </ul>
+
+      <h3>Limitation of Liability</h3>
+      <p>We strive to ensure all information on our site is accurate, but we do not guarantee that content is free of errors. We are not liable for indirect or consequential losses arising from use of our services.</p>
+
+      <h3>Changes to These Terms</h3>
+      <p>We may update these Terms &amp; Conditions from time to time. Continued use of our services after changes are posted constitutes acceptance of the revised terms.</p>
+
+      <div class="policy-updated">Last updated: July 2026</div>
+    </div>
   </div>
 </div>
 
@@ -487,7 +559,7 @@ input,textarea,select{font-family:inherit}
         </div>
       </div>
       <div class="footer__col">
-        <h4>Company</h4>
+        <h4>Legal</h4>
         <a href="#" onclick="openPolicy('privacyModal',event)">Privacy Policy</a>
         <a href="#" onclick="openPolicy('termsModal',event)">Terms &amp; Conditions</a>
         <a href="#" onclick="openPolicy('cancelPolicyModal',event)">Cancellation Policy</a>

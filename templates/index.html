@@ -608,6 +608,60 @@
       font-size: 12px; color: rgba(255,255,255,.35);
     }
 
+    /* ── POLICY POPUPS ───────────────────────────────── */
+    .policy-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(20,16,15,.55);
+      z-index: 3000;
+      align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .policy-overlay.active { display: flex; }
+    .policy-modal {
+      background: var(--white);
+      border-radius: var(--radius);
+      max-width: 560px; width: 100%; max-height: 80vh;
+      display: flex; flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      animation: policyIn .18s ease;
+    }
+    @keyframes policyIn {
+      from { opacity: 0; transform: translateY(8px) scale(.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .policy-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; border-bottom: 1px solid var(--gray-5);
+      flex-shrink: 0;
+    }
+    .policy-modal-header h2 {
+      margin: 0; font-size: 18px; font-weight: 700;
+      font-family: var(--serif); color: var(--ink);
+    }
+    .policy-close {
+      background: none; border: none; color: var(--gray-3);
+      font-size: 22px; line-height: 1; cursor: pointer;
+      padding: 4px 8px; border-radius: 6px;
+      transition: background var(--transition), color var(--transition);
+    }
+    .policy-close:hover { color: var(--ink); background: var(--gray-5); }
+    .policy-modal-body {
+      padding: 20px 24px 28px; overflow-y: auto;
+      font-size: 14.5px; line-height: 1.7; color: var(--gray-1);
+    }
+    .policy-modal-body h3 {
+      color: var(--ink); font-size: 15px; margin: 20px 0 8px;
+    }
+    .policy-modal-body h3:first-child { margin-top: 0; }
+    .policy-modal-body p { margin: 0 0 12px; }
+    .policy-modal-body ul { margin: 0 0 12px; padding-left: 20px; }
+    .policy-modal-body li { margin-bottom: 6px; }
+    .policy-updated {
+      color: var(--gray-3); font-size: 12.5px; margin-top: 24px;
+      padding-top: 14px; border-top: 1px solid var(--gray-5);
+    }
+
     /* ── TOAST ────────────────────────────────────────── */
     .toast-rack {
       position: fixed; top: calc(var(--nav-h) + 12px); right: 20px;
@@ -655,7 +709,7 @@
       .hero__content { max-width: 100%; }
       .hero__sub { max-width: 100%; }
       .hero__chips { left: 22px; bottom: 20px; }
-      .hero__chip { padding: 6px 12px; font-size: 11px; }
+      .hero__chip { padding: 6px 12px; font-size: 7px; }
 
       .hero__gender { padding: 24px 16px 0; }
       .hero__btn img { width: 96px; height: 96px; }
@@ -854,7 +908,7 @@
   <!-- injected dynamically per category -->
 </div>
 
-<!-- ═══════════════════════ REVIEWS ═══════════════════════ -->
+<!-- ═══════════════════════ REVIEWS ═══════════════════════ 
 <section class="section">
   <div class="container">
     <div class="sec-head">
@@ -868,7 +922,7 @@
       <div class="skeleton skeleton-card" style="flex:0 0 300px;" aria-hidden="true"></div>
     </div>
   </div>
-</section>
+</section> -->
 
 <!-- ═══════════════════════ FOOTER ═══════════════════════ -->
 <footer class="footer" role="contentinfo">
@@ -892,18 +946,17 @@
         </div>
       </div>
       <div class="footer__col">
-        <h4>Company</h4>
-        <a href="#">About Us</a>
-        <a href="#">Contact Us</a>
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms & Conditions</a>
+        <h4>Legal</h4>
+        <a href="#" onclick="openPolicy('privacy-modal'); return false;">Privacy Policy</a>
+        <a href="#" onclick="openPolicy('terms-modal'); return false;">Terms &amp; Conditions</a>
+        <a href="#" onclick="openPolicy('cancellation-modal'); return false;">Cancellation Policy</a>
       </div>
       <div class="footer__col">
         <h4>Services</h4>
-        <a href="services.html?gender=men">Men's Salon</a>
-        <a href="services.html?gender=women">Women's Salon</a>
-        <a href="services.html">All Services</a>
-        <a href="services.html">Packages</a>
+        <a href="services?gender=men">Men's Salon</a>
+        <a href="services?gender=women">Women's Salon</a>
+        <a href="services">All Services</a>
+        <a href="services">Packages</a>
       </div>
       <div class="footer__col" id="footerContact">
         <h4>Contact</h4>
@@ -928,6 +981,106 @@
     </div>
   </div>
 </footer>
+
+<!-- ═══════════════════════ POLICY POPUPS ═══════════════════════ -->
+<div class="policy-overlay" id="privacy-modal" onclick="closeOnOverlay(event,'privacy-modal')">
+  <div class="policy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-title">
+    <div class="policy-modal-header">
+      <h2 id="privacy-title">Privacy Policy</h2>
+      <button class="policy-close" onclick="closePolicy('privacy-modal')" aria-label="Close">&times;</button>
+    </div>
+    <div class="policy-modal-body">
+      <h3>Information We Collect</h3>
+      <p>We collect information you provide directly to us, such as your name, email address, phone number, and payment details when you make a booking or create an account.</p>
+
+      <h3>Local Storage &amp; Session Data</h3>
+      <p>We may store booking details, cart information, contact information, and authentication data in your browser to improve your experience and maintain your session.</p>
+
+      <h3>How We Use Your Information</h3>
+      <ul>
+        <li>To process and manage your bookings</li>
+        <li>To communicate with you about your orders or inquiries</li>
+        <li>To improve our website and services</li>
+        <li>To keep you signed in and remember your preferences</li>
+      </ul>
+
+      <h3>Data Sharing</h3>
+      <p>We do not sell your personal information. We may share data with trusted third-party service providers who help us operate our business, such as payment processors, and only as needed to deliver our services.</p>
+
+      <h3>Your Choices</h3>
+      <p>You can clear your browser's stored data at any time. Doing so may require you to sign in again or re-enter cart and booking information.</p>
+
+      <h3>Contact Us</h3>
+      <p>If you have questions about this Privacy Policy, please contact us using the details provided on our website.</p>
+
+      <div class="policy-updated">Last updated: July 2026</div>
+    </div>
+  </div>
+</div>
+
+<div class="policy-overlay" id="terms-modal" onclick="closeOnOverlay(event,'terms-modal')">
+  <div class="policy-modal" role="dialog" aria-modal="true" aria-labelledby="terms-title">
+    <div class="policy-modal-header">
+      <h2 id="terms-title">Terms &amp; Conditions</h2>
+      <button class="policy-close" onclick="closePolicy('terms-modal')" aria-label="Close">&times;</button>
+    </div>
+    <div class="policy-modal-body">
+      <h3>Acceptance of Terms</h3>
+      <p>By accessing or using our website and services, you agree to be bound by these Terms &amp; Conditions. If you do not agree, please do not use our services.</p>
+
+      <h3>Bookings &amp; Payments</h3>
+      <p>All bookings are subject to availability and confirmation. Prices are listed in the applicable currency and may change without prior notice until a booking is confirmed and paid for.</p>
+
+      <h3>User Responsibilities</h3>
+      <ul>
+        <li>Provide accurate and complete information when booking</li>
+        <li>Use our services only for lawful purposes</li>
+        <li>Keep your account credentials secure</li>
+      </ul>
+
+      <h3>Limitation of Liability</h3>
+      <p>We strive to ensure all information on our site is accurate, but we do not guarantee that content is free of errors. We are not liable for indirect or consequential losses arising from use of our services.</p>
+
+      <h3>Changes to These Terms</h3>
+      <p>We may update these Terms &amp; Conditions from time to time. Continued use of our services after changes are posted constitutes acceptance of the revised terms.</p>
+
+      <div class="policy-updated">Last updated: July 2026</div>
+    </div>
+  </div>
+</div>
+
+<div class="policy-overlay" id="cancellation-modal" onclick="closeOnOverlay(event,'cancellation-modal')">
+  <div class="policy-modal" role="dialog" aria-modal="true" aria-labelledby="cancellation-title">
+    <div class="policy-modal-header">
+      <h2 id="cancellation-title">Cancellation Policy</h2>
+      <button class="policy-close" onclick="closePolicy('cancellation-modal')" aria-label="Close">&times;</button>
+    </div>
+    <div class="policy-modal-body">
+      <h3>Cancellation by Customer</h3>
+      <ul>
+        <li>Bookings may be cancelled before the scheduled appointment time.</li>
+        <li>There is no cancellation charge — we simply ask that you cancel as soon as possible so the slot can be offered to another customer.</li>
+      </ul>
+
+      <h3>Rescheduling</h3>
+      <p>You may request to reschedule your appointment, subject to slot availability.</p>
+
+      <h3>Late Arrival</h3>
+      <p>Arriving significantly late may result in reduced service time or cancellation of the appointment.</p>
+
+      <h3>No-Show</h3>
+      <p>Repeated no-shows may lead to restrictions on future bookings.</p>
+
+      <h3>Cancellation by VOGX Salon</h3>
+      <p>In rare circumstances, VOGX Salon may cancel or reschedule an appointment due to staff availability, emergencies, or other operational reasons.</p>
+
+      <h3>Contact</h3>
+      <p>For cancellations or rescheduling, please contact us using the details provided on our website.</p>
+
+      <div class="policy-updated">Last updated: July 2026</div>
+    </div>
+  </div>
+</div>
 
 <div class="toast-rack" id="toastRack" aria-live="polite"></div>
 
@@ -1320,6 +1473,26 @@ function setupScrollArrows(rowEl) {
   window.addEventListener('resize', update);
   requestAnimationFrame(update);
 }
+function openPolicy(id){
+    document.getElementById(id).classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closePolicy(id){
+    document.getElementById(id).classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  function closeOnOverlay(e, id){
+    if(e.target.id === id){
+      closePolicy(id);
+    }
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      document.querySelectorAll('.policy-overlay.active').forEach(function(el){
+        closePolicy(el.id);
+      });
+    }
+  });
 
 document.addEventListener('click', e => {
   const btn = e.target.closest('.scroll-arrow');
