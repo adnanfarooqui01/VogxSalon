@@ -20,7 +20,7 @@ def compute_booking_totals(service_ids, package_ids, booking_type, pincode):
     if booking_type == 'home':
         serviceable = ServiceablePincode.objects.filter(pincode=pincode, is_active=True).first()
         service_charge = serviceable.delivery_charge if serviceable else 0
-    convenience_fee = 20
+    convenience_fee = 0
     total_price = subtotal + service_charge + convenience_fee
     return services, packages, subtotal, service_charge, convenience_fee, total_price
 

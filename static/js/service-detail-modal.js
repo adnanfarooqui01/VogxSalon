@@ -46,7 +46,7 @@
   window.__vogxDetailModalLoaded = true;
 
   /* ── CONFIG ──────────────────────────────────────────────────── */
-  const API = window.API || 'http://127.0.0.1:8000/api';
+  const API = window.API || '/api';
 
   /* ── STYLES ──────────────────────────────────────────────────── */
   const css = `
